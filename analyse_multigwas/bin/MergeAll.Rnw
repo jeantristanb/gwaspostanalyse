@@ -1,0 +1,222 @@
+\documentclass[12pt]{article}
+
+%to test two table a cote
+\usepackage{longtable}
+
+\usepackage{times}
+\usepackage{hyperref}
+% position in figure => [H] => figure/table positioning in the place write
+\usepackage{float}
+%option booktabs=T, dans kable
+\usepackage{booktabs}
+%to use < and > directly in latex
+\usepackage[T1]{fontenc}
+\usepackage[table]{xcolor}
+\usepackage{multicol}
+\usepackage{lscape}
+%\usepackage{makecell,interfaces-makecell}
+
+
+
+\newcommand{\subsubsubsection}[1]{\paragraph{#1}\mbox{}\\}
+\setcounter{secnumdepth}{4}
+\setcounter{tocdepth}{4}
+
+\usepackage{subfig}
+\usepackage{array}
+\usepackage{multicol}
+\hypersetup{pdfpagemode=UseNone} % don't show bookmarks on initial view
+\hypersetup{colorlinks, urlcolor={blue}}
+
+\setlength{\headheight}{0.0in}
+\setlength{\topmargin}{0.0in}
+\setlength{\headsep}{0.0in}
+\setlength{\textheight}{8.65in}
+\setlength{\footskip}{0.35in}
+\setlength{\oddsidemargin}{0.0in}
+\setlength{\evensidemargin}{0.0in}
+\setlength{\textwidth}{6.5in}
+\setlength{\parskip}{6pt}
+\setlength{\parindent}{0pt}
+
+
+\title{GWAS result for \Sexpr{gsub("_","\\\\_",Pheno)}}
+\date{\today}
+\author{Automatics pipeline to extract results \thanks{SBIMB}, SBMIB}
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+
+
+\section{Parameters}
+<<parametes,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "Comparaison Sc between Sex and Site",fig.pos="H", fig.width=6, fig.height=4>>=
+#Param[,1]<-gsub("_","\\\\_", Param[,1])
+#Param[,2]<-gsub("_","\\\\_", Param[,2])
+kable(Param, ,caption=paste("Parameters of analyse"), booktabs = T, digits=1, row.names=F,  longtable = T, format="latex")
+@
+\section{Phenotypes distribution}
+<<Pheno,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "Distribution of traits by type",fig.pos="H", fig.width=6, fig.height=4>>=
+if(nrow(ResPhenoF)>0){
+kable(ResPhenoF, ,caption=paste("Phenotype distribution for each GWAS"), booktabs = T, digits=1, row.names=F,  longtable = T, format="latex")
+RangX<-c()
+RangY<-c()
+Dens<-list()
+Cmt<-1
+for(Names in names(ListDataPheno)){
+Dens[[Names]]<-density(ListDataPheno[[Names]][,Pheno],na.rm=T)
+RangX<-range(RangX,Dens[[Names]]$x)
+RangY<-range(RangY,Dens[[Names]]$y)
+DataTmp<-ListDataPheno[[Names]][ ,c("FID","IID",Pheno,covariate_list)]
+DataTmp$Type<-Names
+if(Cmt==1)DataPhenoMerge<-DataTmp
+else DataPhenoMerge<-rbind( DataPhenoMerge,DataTmp)
+Cmt<-Cmt+1
+}
+DataPhenoMerge<-na.omit(DataPhenoMerge)
+plot(RangX,RangY, xlab="density", ylab="", type="n")
+NameDen<-names(Dens)
+tmp<-sapply(1:length(names(Dens)), function(x)lines(Dens[[NameDen[x]]], col=x))
+legend("topright", legend=names(Dens) , col=1:length(names(Dens)), lty=1)
+}
+
+@
+<<Pheno2,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "boxplot of phenotype by types",fig.pos="H", fig.width=6, fig.height=4>>=
+if(nrow(ResPhenoF)>0){
+
+boxplot(as.formula(paste(Pheno,"~ Type")), data=DataPhenoMerge, las=3, main="", xlab=Pheno)
+}
+Dund<-function(x, del=" ")return(gsub("_", del,x))
+@
+<<PhenoCov,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "Comparison phenotype and covariate",fig.pos="H", fig.width=6, fig.height=4>>=
+if(nrow(ResPhenoF)>0){
+
+for(cov in covariate_list){
+cat("\\subsection{ covariate : ",Dund(cov),"}\n")
+if(length(unique(DataPhenoMerge[,cov]))>5){
+#ggplot(DataPhenoMerge, aes_string(x = Pheno, y = cov)) + geom_point(aes_string(color = "Type", shape = "Type"))+ geom_smooth(aes(color = "Type", fill = "Type"), method = "lm") +geom_rug(aes_string(color ="Type"))
+print(ggplot(DataPhenoMerge, aes_string(x=Pheno, y=cov, color="Type", shape="Type")) + geom_point() + geom_smooth(method=lm))
+}else{
+boxplot(as.formula(paste(Pheno,"~", cov,"+Type")), data=DataPhenoMerge, las=3, main="")
+}
+}
+}
+@
+
+
+\section{QQplot and Manhattan}
+\section{QQplot}
+
+<<QQplot,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "QQPlot comparison ",fig.pos="H", fig.width=6, fig.height=4>>=
+
+
+if(length(QQPloFig)>0){
+cat("\\begin{figure}[H]\n\\begin{center}\n\\includegraphics[width=15cm]{",gsub("","",QQPloFig),"}\n\\caption{QQplot testing: ",gsub("_","-",Pheno),"}\n\\label{All}\n\\end{center}\n\\end{figure}\n", sep="")
+  cat("\n")
+}
+@
+
+<<Sign,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "Comparaison Sc between Sex and Site",fig.pos="H", fig.width=6, fig.height=4>>=
+if(nrow(DataFNSig)>0){
+print(kable(DataFNSigF,caption=paste("N, percentage of significant positions for various alpha values"), booktabs = T, digits=1, row.names=F,  longtable = T, format="latex")) 
+}
+@
+
+\subsection{Manhattan}
+<<Manath,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "Manhatan plot",fig.pos="H", fig.width=6, fig.height=4>>=
+for (Mana in ManPloFig) {  
+Title<-gsub(".pdf$","",gsub(gsub("_","-",Pheno),"",basename(Mana)))
+cat("\\subsubsection{",Title,"}\n")
+cat("\\begin{figure}[H]\n\\begin{center}\n\\includegraphics[width=15cm]{",gsub("","",Mana),"}\n\\caption{Manhattan testing: ",Mana,"}\n\\label{",Title,"}\n\\end{center}\n\\end{figure}\n", sep="")
+}
+@
+
+
+\section{Significant rs}
+\begin{itemize}
+\item used alpha : \Sexpr{opt[['max_pval']]}
+\item used windows for gwas and genes around rs: \Sexpr{opt[['size_win']]}
+\end{itemize}
+%\begin{landscape}
+<<signrs,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "Manhatan plot",fig.pos="H", fig.width=6, fig.height=4>>=
+NLim=100
+if(nrow(RsResume)>NLim){
+cat("Solution is limited to ", NLim, "solution found is ",nrow(RsResume), "selection of best solution","\n")
+PvalMin<-apply(RsResume[ , grep(PvalHead, names(RsResume))], 1, function(x)min(x[!is.infinite(x)], na.rm=T))
+RsResume<-RsResume[order(PvalMin),]
+RsResume<-RsResume[1:NLim,]
+}
+if(nrow(RsResume)>0){
+RsResume<-RsResume[ , !(names(RsResume) %in% c("X", "PosGWAS"))]
+NamePop<-gsub(paste(PvalHead,"_",sep=""),"",grep(PvalHead, names(RsResume), value=T))
+ListeEntAll<-c()
+Cmt<-1
+for(Nam in NamePop){
+Result<-paste(as.characterspe(RsResume[,paste(PvalHead,Nam,sep="_")],2), " (",as.characterspe(RsResume[,paste(SetHead,Nam,sep="_")],2), ", ",as.characterspe(RsResume[,paste(BetHead,Nam,sep="_")],2), ", ", as.characterspe(RsResume[,paste(FreqHead,Nam,sep="_")],2),")", sep="")
+if(Cmt==1)DataFResumeF<-data.frame(Resu=Result)
+else DataFResumeF<-cbind(DataFResumeF ,data.frame(Resu=Result))
+names(DataFResumeF)[ncol(DataFResumeF)]<-Nam
+ListeEntAll<-c(ListeEntAll,paste(PvalHead,Nam,sep="_"), paste(SetHead,Nam,sep="_"),paste(BetHead,Nam,sep="_"), paste(FreqHead,Nam,sep="_"))
+Cmt<-Cmt+1
+}
+ListeOther<-c(!(names(RsResume) %in% ListeEntAll))
+RsResume2<-cbind(RsResume[ ,ListeOther], DataFResumeF)
+PosSite<-which(names(RsResume2) %in%  names(DataFResumeF))
+PosGWAS<-which(names(RsResume2) %in% c("MAPPED_TRAIT","Ref", "Genes"))
+PosOther<-which(!(names(RsResume2) %in% c(PosSite,PosGWAS)))
+
+kable(RsResume2, caption=paste("rs significant : pval (se, Beta, freq), comparison with GWAS catalog and genes around windows ",opt[['size_win']], sep=""),digits=1, row.names=F,  longtable = T, format="latex", booktabs = T)  %>%   kable_styling(font_size =7) %>% kable_styling(latex_options = c("striped", "HOLD_position","repeat_header")) %>% column_spec(PosGWAS, width = "8em")  %>% column_spec(PosOther, width = "3em")  %>% column_spec(PosSite[!(PosSite %in%  PosGWAS)], width = "5em")
+}
+@
+
+
+\section{Significant windows}
+\begin{itemize}
+\item used alpha replication : \Sexpr{opt[['max_pval_rep']]}
+\item Merge 2 rs as windows if distance is inferior to \Sexpr{opt[['wind_merge']]}
+\item used windows for gwas and genes around rs: \Sexpr{opt[['size_win']]}
+\end{itemize}
+
+<<signwind,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "Manhatan plot",fig.pos="H", fig.width=6, fig.height=4>>=
+if(nrow(WindResume)>NLim){
+cat("Solution is limited to ", NLim, "solution found is ",nrow(WindResume), "selection of best solution","\n")
+PvalMin<-apply(WindResume[ , grep(PvalHead, names(WindResume))], 1, function(x)min(x[!is.infinite(x)], na.rm=T))
+WindResume<-WindResume[order(PvalMin),]
+RsResume<-RsResume[1:NLim,]
+}
+if(nrow(WindResume)>0){
+#"","Min_bp","Max_bp","Groupe","nb_pos","Chro","P_BOLT_LMM_All","P_BOLT_LMM_Est","P_BOLT_LMM_South","P_BOLT_LMM_West","Num","MAPPED_TRAIT","Ref","GENE"
+WindResume<-WindResume[ , !(names(WindResume) %in% c("X", "PosGWAS", "Groupe", "Num"))]
+
+PosSite<-grep(PvalHead, names(WindResume))
+PosGWAS<-which(names(WindResume) %in% c("MAPPED_TRAIT","Ref", "Genes"))
+PosOther<-which(!(names(WindResume) %in% c(PosSite,PosGWAS)))
+
+for(head in grep(PvalHead, names(RsResume), value=T)) WindResume[ , head]<-as.characterspe(WindResume[ , head], 2)
+kable(WindResume, caption="windows significant for alpha rep pval, comparison with GWAS catalog and genes",digits=1, row.names=F,  longtable = T, format="latex", booktabs = T)  %>%   kable_styling(font_size =5) %>% kable_styling(latex_options = c("repeat_header","striped", "HOLD_position")) %>% column_spec(PosOther, width = "4em") %>% column_spec(PosGWAS, width = "10em") %>% column_spec(PosSite[!(PosSite %in%  PosGWAS)], width = "4em")
+}
+@
+
+\section{Other traits}
+\begin{itemize}
+\item comparison of rs significant (inferior \Sexpr{opt[['max_pval']]}) in other phenotype inferior \Sexpr{opt[['max_pval_rep']]}
+\end{itemize}
+
+<<repothertrait,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "Manhatan plot",fig.pos="H", fig.width=6, fig.height=4>>=
+if(nrow(OtherTrait)>0){
+#"","Min_bp","Max_bp","Groupe","nb_pos","Chro","P_BOLT_LMM_All","P_BOLT_LMM_Est","P_BOLT_LMM_South","P_BOLT_LMM_West","Num","MAPPED_TRAIT","Ref","GENE"
+OtherTrait<-OtherTrait[ , !(names(OtherTrait) %in% c("X", "PosGWAS", "Groupe", "Num"))]
+PosSite<-grep(PvalHead, names(WindResume))
+PosGWAS<-which(c("MAPPED_TRAIT","Ref", "Genes") %in% OtherTrait)
+PosOther<-which(!(names(OtherTrait) %in% c(PosSite,PosGWAS)))
+kable(OtherTrait, caption="p value inferior to alpha rep in other pheno and found in traits analyzed (alpha)",digits=1, row.names=F,  longtable = T, format="latex", booktabs = T)  %>%   kable_styling(font_size =7) %>% kable_styling(latex_options = c("repeat_header","striped", "HOLD_position")) #%>% column_spec(PosOther, width = "4em") %>% column_spec(PosGWAS, width = "10em") %>% column_spec(PosSite, width = "3em")
+}
+
+@
+
+
+
+
+
+\end{document}
