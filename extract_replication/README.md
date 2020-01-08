@@ -2,7 +2,7 @@
 
 ## Installation
 * python3 : matplotlib,pandas,numpy
-* R : 
+* R : data.table
 * nextflow
 * plink
 
@@ -23,18 +23,19 @@ research by position, windows, clump and block tranferability
 * `haploblocks` : 
 * `file_gwas` : file gwas
  * `head_pval` : ok
- * `head_freq`
+ * `head_freq` : ?
  * `head_bp` : bp 
  * `head_chr` : chr
  * `head_rs` : rs
- * `head_beta`
- * `head_se` 
- * `head_A1`
- * head_A2`
+ * `head_beta` : ?
+ * `head_se`  : ?
+ * `head_A1` : ?
+ * head_A2` : ?
 * `gwas_cat` : position to check transferability, must be separate by tabulation
  * head_chr_gwascat
  * head_bp_gwascat
 * `size_wind` : position around each pos of gwas cat
+* `threshpval` : threshold pvalue after adjustment [ default : 0.05]
 
 ### other parameters :
   * `plink_bin` : binary for plink [default : plink ]

@@ -29,11 +29,11 @@ def parseArguments():
     parser = argparse.ArgumentParser(description='extract annotation for specific position')
     parser.add_argument('--chro_header_info',type=str,help="header of chro in info file", required=True)
     parser.add_argument('--bp_header_info',type=str,help="header of pval in info files", required=True)
-    parser.add_argument('--list_info',type=str,required=True, help="file contains rs chro pos used to do windows")
+    parser.add_argument('--list_info',type=str,required=True, help="file contains rs chro pos used to do size_win_kbs")
     parser.add_argument('--out', type=str,help="header for out")
-    parser.add_argument('--wind_size',type=float,required=True,help="windows size in kb")
-    parser.add_argument('--bin_plink',type=str,required=False,help="windows size in kb", default="plink")
-    parser.add_argument('--keep',type=str,required=False,help="windows size in kb")
+    parser.add_argument('--size_win_kb',type=float,required=True,help="size_win_kbs size in kb")
+    parser.add_argument('--bin_plink',type=str,required=False,help="size_win_kbs size in kb", default="plink")
+    parser.add_argument('--keep',type=str,required=False,help="size_win_kbs size in kb")
     parser.add_argument('--bfile',type=str,help="bfile to defined clump in gwas file", required=True)
     parser.add_argument('--cpus',type=str,help="cpus for plink", required=False, default=1)
     args = parser.parse_args()
@@ -44,9 +44,9 @@ args=parseArguments()
 
 ChroHeadInf=args.chro_header_info
 BpHeadInf=args.bp_header_info
-window=args.wind_size
+size_win_kb=args.size_win_kb
 
-filebed = write_list_info(args.list_info, ChroHeadInf,BpHeadInf, window*1000, args.out)
+filebed = write_list_info(args.list_info, ChroHeadInf,BpHeadInf, size_win_kb*1000, args.out)
 #plink -bfile $bfileI --keep $FileInd --extract range $FileCat".range" --make-bed --out $bfile  --keep-allele-order &
 
 Cmd=args.bin_plink+" -bfile "+args.bfile+" --extract range " +filebed+ " --make-bed --out "+args.out+ " --keep-allele-order --threads "+args.cpus

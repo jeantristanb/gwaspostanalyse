@@ -1,0 +1,88 @@
+
+\documentclass[12pt]{article}
+
+%to test two table a cote
+\usepackage{lipsum}
+
+\usepackage{times}
+\usepackage{hyperref}
+% position in figure => [H] => figure/table positioning in the place write
+\usepackage{float}
+%option booktabs=T, dans kable
+\usepackage{booktabs}
+%to use < and > directly in latex
+\usepackage[T1]{fontenc}
+%  \rowcolors
+\usepackage[table]{xcolor}
+\usepackage{multicol}
+
+\newcommand{\subsubsubsection}[1]{\paragraph{#1}\mbox{}\\}
+\setcounter{secnumdepth}{4}
+\setcounter{tocdepth}{4}
+% seting level of numbering (default for "report" is 3). With ''-1'' you have non number also for chapters
+
+\usepackage{subfig}
+\usepackage{cleveref}
+\usepackage{array}
+\usepackage{multicol}
+\addbibresource{reportEGFR.bib}
+\hypersetup{pdfpagemode=UseNone} % don't show bookmarks on initial view
+\hypersetup{colorlinks, urlcolor={blue}}
+
+
+% revise margins
+\setlength{\headheight}{0.0in}
+\setlength{\topmargin}{0.0in}
+\setlength{\headsep}{0.0in}
+\setlength{\textheight}{8.65in}
+\setlength{\footskip}{0.35in}
+\setlength{\oddsidemargin}{0.0in}
+\setlength{\evensidemargin}{0.0in}
+\setlength{\textwidth}{6.5in}
+
+\setlength{\parskip}{6pt}
+\setlength{\parindent}{0pt}
+\title{Report for transferability : analyse by position}
+\date{\today}
+\author{Nextflow \thanks{SBIMB}, SBMIB}
+
+
+
+<<charge_function,  comment=NA, results = 'hide', echo=FALSE >>=
+
+if(!is.null(PvalGC) & !is.null(LimPvalGC)){
+DataGWASCat<-DataGWASCat[DataGWASCat[,PvalGC]<=LimPvalGC,]
+}
+GWASCatPos<-unique(DataGWASCat[,c(ChroGC,PosGC)])
+
+DataGWASCom<-merge(DataGWAS,GWASCatPos, by.x=c(ChroGW,BPGW),by.y=c(ChroGC,PosGC))
+## change header
+headgwas=c("chro_gwas","bp_gwas", "beta_gwas", "se_gwas", )
+DataGWASCom$p.adjust.bonf<-p.adjust(DataGWASCom[,Pval],method="bonferroni")
+DataGWASCom$p.adjust.fdr<-p.adjust(DataGWASCom[,Pval],method="fdr")
+InfoPosGWAS<-MakeGwasCatInfo(DataGWASCat, ChroGC,PosGC,InfoGC)
+@
+\section{Parameters}
+Todo\\
+\section{Descriptifs}
+\begin{itemize}
+\item Rs number in gwas catalog : \Sexpr{nrow(GWASCatPos)}
+\item Rs common between gwas result and gwas catalog: \Sexpr{nrow(DataGWASCom)}
+\end{item}
+
+\section{Significance}
+\subsection{QQ plot}
+QQ plot using all common position between GWAS catalog and GWAS 
+<<qqplot,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "QQplot of pvalue of gwas result found in gwas catalog",fig.pos="H", fig.width=4, fig.height=4>>=
+qq(DataGWASCom[,Pval])
+@
+\subsection{Significance position : bonferroni}
+\Sexpr{length(which(DataGWASCom$p.adjust.bonf<LimPval))} positions found after an adjustment of bonferroni and threshold of \Sexpr{LimPval}
+
+
+\subsection{Significance position : fdr}
+\Sexpr{length(which(DataGWASCom$p.adjust.fdr<LimPval))} positions found after an adjustment of fdr and threshold of \Sexpr{LimPval}
+
+
+\end{document}
+
