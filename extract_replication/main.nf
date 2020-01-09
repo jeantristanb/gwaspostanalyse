@@ -83,6 +83,8 @@ params.plk_othopt_haploblocks=""
 params.plink_bin='plink'
 params.mem_plink='10G'
 params.cpu_plink=2
+params.genes_file=""
+params.gene_file_ftp="ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19/gencode.v19.annotation.gtf.gz"
 
 //params gwas cat 
 params.head_bp_gwascat="Chro37"
@@ -128,7 +130,7 @@ process MergeBlocsBedFile{
        file(allfile) from ch_block_merg
      publishDir "${params.output_dir}/blocs/", overwrite:true, mode:'copy'
      output :
-        file(out) into ch_haploblocks
+        file(out) into (ch_haploblocks, ch_haploblocks_block, ch_haploblocks_pos)
      script :
         out='block_all.blocks' 
         allfilejoin=allfile.join(",")
@@ -139,7 +141,28 @@ process MergeBlocsBedFile{
 }
 }else{
 ch_haploblocks=Channel.fromPath(params.haploblocks)
+ch_haploblocks_block=Channel.fromPath(params.haploblocks)
+ch_haploblocks_pos=Channel.fromPath(params.haploblocks)
 }
+if(params.genes_file==""){
+process GetGeneFile{
+     publishDir "${params.output_dir}/genes/", overwrite:true, mode:'copy'
+     output:
+       file(out) into (geneinfo_ch_pos, geneinfo_ch_ldwind) 
+     script :
+       out='gene_info.gene'
+       """
+       wget -O tmpfile.gz ${params.gene_file_ftp}
+       gunzip tmpfile.gz
+       format_infogene.r tmpfile $out  
+       """
+
+}
+
+}else{
+geneinfo_ch=Channel.fromPath(params.genes_file)
+}
+
 
 
 bed = Paths.get(params.input_dir,"${params.input_pat}.bed").toString()
@@ -189,6 +212,7 @@ process ComputedReplication{
       file("${out}.in.list_info") into res_bypos
       file("${out}.sub_gwas") into file_sub_gwas 
       file("${out}.clump.ldbloc.detail") into clump_ldbloc
+      file("${out}.plk.clumped") into (clump_res_block,clump_res_pos)
    script :
      plk=bed.baseName
      out=params.output
@@ -204,12 +228,20 @@ process AnalyzeByPos{
      file(infogwas) from fileinfogwas_ana_bypos 
      file(file_res) from res_bypos
      file(gwas) from file_sub_gwas
+     file(geneinfo) from geneinfo_ch_pos
+     file(haploblocks) from ch_haploblocks_pos
+     file(clump) from clump_res_pos
+  publishDir params.output_dir, overwrite:true, mode:'copy'
+  output :
+    file("$out")
   script :
     pvalgwascat =  (params.head_pval_gwascat!='') ? " --pval_gwascat ${params.head_pval_gwascat} --threshpval_gwascat ${params.threshold_pval_gwascat}" : ""
-
+    out=params.output+"_bypos.pdf"
     """
-    launch_analyse_posgwascat.r --chro_gwascat ${params.head_chr_gwascat} --bp_gwascat ${params.head_bp_gwascat} --gwas_cat $infogwas --gwas_file $gwas --chro_gwas ${params.head_chr}  --bp_gwas ${params.head_bp} --rs_gwas ${params.head_rs} $pvalgwascat --pval_gwas ${params.head_pval} --threshpval ${params.threshpval} --print_gwascat ${params.info_gwascat}
-
+    launch_analyse_posgwascat.r --chro_gwascat ${params.head_chr_gwascat} --bp_gwascat ${params.head_bp_gwascat} --gwas_cat $infogwas --gwas_file $gwas --chro_gwas ${params.head_chr}  --bp_gwas ${params.head_bp} --rs_gwas ${params.head_rs} $pvalgwascat --pval_gwas ${params.head_pval} --threshpval ${params.threshpval} --print_gwascat ${params.info_gwascat} --info_gene $geneinfo --haploblocks $haploblocks --clump $clump --size_win_kb ${params.size_win_kb}
+    pdflatex analyse_posgwascat.tex
+    pdflatex analyse_posgwascat.tex
+    mv analyse_posgwascat.pdf $out
     """
 }
 //echo "python3 /home/jeantristan/Travail/GWAS/PythonScript/extract_posclum.py --list_info $FileCat --file_gwas $FileGWAS --wind_size $WindSize --out $Out --chro_header_info $ChrInfo --bp_header_info $BpInfo --chro_header_gwas $ChrGWAS --bp_header_gwas $BpGWAS --rs_header_gwas $RsGWAS --pval_header_gwas $PvalGWAS --bfile $bfile --maxpval $pval --r2 $R2 --file_block_ld All_block.blocks.extented.det" >> $BashFile

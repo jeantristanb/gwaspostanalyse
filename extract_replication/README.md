@@ -5,6 +5,7 @@
 * R : data.table
 * nextflow
 * plink
+* pdflatex
 
 ## Parameters
 ###

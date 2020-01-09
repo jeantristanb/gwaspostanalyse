@@ -2,7 +2,9 @@
 \documentclass[12pt]{article}
 
 %to test two table a cote
-\usepackage{lipsum}
+\usepackage{longtable}
+
+
 
 \usepackage{times}
 \usepackage{hyperref}
@@ -16,16 +18,15 @@
 \usepackage[table]{xcolor}
 \usepackage{multicol}
 
+\usepackage{lscape}
 \newcommand{\subsubsubsection}[1]{\paragraph{#1}\mbox{}\\}
 \setcounter{secnumdepth}{4}
 \setcounter{tocdepth}{4}
 % seting level of numbering (default for "report" is 3). With ''-1'' you have non number also for chapters
 
 \usepackage{subfig}
-\usepackage{cleveref}
 \usepackage{array}
 \usepackage{multicol}
-\addbibresource{reportEGFR.bib}
 \hypersetup{pdfpagemode=UseNone} % don't show bookmarks on initial view
 \hypersetup{colorlinks, urlcolor={blue}}
 
@@ -45,6 +46,7 @@
 \title{Report for transferability : analyse by position}
 \date{\today}
 \author{Nextflow \thanks{SBIMB}, SBMIB}
+\begin{document}
 
 
 
@@ -55,12 +57,13 @@ DataGWASCat<-DataGWASCat[DataGWASCat[,PvalGC]<=LimPvalGC,]
 }
 GWASCatPos<-unique(DataGWASCat[,c(ChroGC,PosGC)])
 
-DataGWASCom<-merge(DataGWAS,GWASCatPos, by.x=c(ChroGW,BPGW),by.y=c(ChroGC,PosGC))
+DataGWASCom<-merge(DataGWAS,GWASCatPos, by.x=c(ChroGW,PosGW),by.y=c(ChroGC,PosGC))
 ## change header
-headgwas=c("chro_gwas","bp_gwas", "beta_gwas", "se_gwas", )
-DataGWASCom$p.adjust.bonf<-p.adjust(DataGWASCom[,Pval],method="bonferroni")
-DataGWASCom$p.adjust.fdr<-p.adjust(DataGWASCom[,Pval],method="fdr")
+headgwas=c("chro_gwas","bp_gwas", "beta_gwas", "se_gwas")
+DataGWASCom$p.adjust.bonf<-p.adjust(DataGWASCom[,PvalGW],method="bonferroni")
+DataGWASCom$p.adjust.fdr<-p.adjust(DataGWASCom[,PvalGW],method="fdr")
 InfoPosGWAS<-MakeGwasCatInfo(DataGWASCat, ChroGC,PosGC,InfoGC)
+DataGWASComSub<-merge(DataGWASCom[,c(ChroGW,RsGW,PosGW,SeGW,BetaGW,PvalGW,AfGW,'p.adjust.bonf','p.adjust.fdr')],InfoPosGWAS,by.x=c(ChroGW,PosGW), by.y=c(ChroGC,PosGC))
 @
 \section{Parameters}
 Todo\\
@@ -68,16 +71,65 @@ Todo\\
 \begin{itemize}
 \item Rs number in gwas catalog : \Sexpr{nrow(GWASCatPos)}
 \item Rs common between gwas result and gwas catalog: \Sexpr{nrow(DataGWASCom)}
-\end{item}
+\end{itemize}
 
 \section{Significance}
 \subsection{QQ plot}
 QQ plot using all common position between GWAS catalog and GWAS 
 <<qqplot,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "QQplot of pvalue of gwas result found in gwas catalog",fig.pos="H", fig.width=4, fig.height=4>>=
-qq(DataGWASCom[,Pval])
+qq(DataGWASCom[,PvalGW])
 @
 \subsection{Significance position : bonferroni}
 \Sexpr{length(which(DataGWASCom$p.adjust.bonf<LimPval))} positions found after an adjustment of bonferroni and threshold of \Sexpr{LimPval}
+\begin{landscape}
+<<tableresbonf,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "QQplot of pvalue of gwas result found in gwas catalog",fig.pos="H", fig.width=4, fig.height=4>>=
+DataGWASComSub2<-DataGWASComSub[order(DataGWASComSub[,ChroGW],DataGWASComSub[,PosGW]),]
+DataGWASComSub2<-DataGWASComSub[DataGWASComSub$p.adjust.bonf<=LimPval, !(names(DataGWASComSub2) %in% 'p.adjust.fdr')]
+DataGWASComSub2[,PvalGW]<-as.characterspe(DataGWASComSub2[,PvalGW], 2)
+DataGWASComSub2[,PvalGW]<-as.characterspe(DataGWASComSub2[,'p.adjust.bonf'], 2)
+size<-paste(round(26/(ncol(DataGWASComSub))-1),"cm",sep="")
+#kable(DataGWASComSub2,"latex",caption=paste("significant pvalue found in gwas catalog"),booktabs = T, digits=1, row.names=F,  longtable = T,col.names=gsub("_"," ", names(DataGWASComSub2)))    %>%  kable_styling(font_size = 8) %>% kable_styling(latex_options = c("striped", "HOLD_position")) %>%  column_spec(2:(ncol(DataGWASComSub2)+1), width = size) %>%  column_spec(1,width='2cm') 
+#%>% column_spec(2:(ncol(ResF)), width = "5em")  %>% column_spec(1, width = "6em") %>% column_spec(c(ncol(ResF)+1), width = "3em") %>%  kable_styling(font_size = 8) %>% kable_styling(latex_options = c("striped", "HOLD_position"))
+@
+\end{landscape}
+\subsection{Plot}
+
+%\begin{table}[ht]
+%\caption{SLC9A4: found in CKD-EPI,MDRD,  Sc}
+%\centering
+%\begin{tabular}{c|c|c}
+%        Var&Mega&Meta\\
+%        Sc&\includegraphics[scale=0.3]{Wind/PlotWind/PlotMega_0.1_0.001_6e-05/agesexpca_ScNew_All/2_103121269_103180863.jpeg}&\includegraphics[scale=0.3]{Wind/PlotWind/PlotMeta_0.1_0.001_6e-05/agesexpca_ScNew_PVALUE-RE2/2_103121269_103180863.jpeg}\\
+%        MDRD4&\includegraphics[scale=0.3]{Wind/PlotWind/PlotMega_0.1_0.001_6e-05/agesexpca_MDRDNoEth_All/2_103121269_103180863.jpeg}&\includegraphics[scale=0.3]{Wind/PlotWind/PlotMeta_0.1_0.001_6e-05/agesexpca_MDRDNoEth_PVALUE-RE2/2_103121269_103180863.jpeg}\\
+%        CKD-EPI&\includegraphics[scale=0.3]{Wind/PlotWind/PlotMega_0.1_0.001_6e-05/agesexpca_CKDEPINoEth_All/2_103121269_103180863.jpeg}&\includegraphics[scale=0.3]{Wind/PlotWind/PlotMeta_0.1_0.001_6e-05/agesexpca_CKDEPINoEth_PVALUE-RE2/2_103121269_103180863.jpeg}\\
+%\end{tabular}
+%\label{tab:SLC9A4}
+%\end{table}
+
+<<plotwindbonf,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "QQplot of pvalue of gwas result found in gwas catalog",fig.pos="H", fig.width=4, fig.height=4>>=
+#PlotWindLocusZoom(Chro,BeginBlock, EndBlock, WindSize,DataGWAS, ChroGW,PosGW, RsGW,PvalGW,DataGC, DataClump, ListRs, DataGene,ChroGE, BeginGE, EndGE, NameGene)
+DataGWASComSubBonf<-DataGWASComSub[DataGWASComSub$p.adjust.bonf<=LimPval,]
+DataGWASComSubBonf<-DataGWASComSub[order(DataGWASComSubBonf[,ChroGW],DataGWASComSubBonf[,PosGW]),]
+
+CmtCountSig=1
+NbWind=1
+GetBeginTab<-function(Nb)paste("\\begin{table}[ht]\n\\caption{ result for bonferroni correction table : ",Nb,"}\\centering\\begin{tabular}{c|c|c}",sep="")
+LatexOut<-GetBeginTab(NbWind)
+CmtSig=1
+#for(CmtSig in 1:nrow(DataGWASComSubBonf)){
+infosig<-DataGWASComSubBonf[CmtSig,]
+Bloc<-DataHaplo[DataHaplo$CHR==infosig[,ChroGW]& DataHaplo$BP1<=infosig[,PosGW] & DataHaplo$BP2>=infosig[,PosGW],]
+cat(nrow(Bloc))
+cat(nrow(infosig))
+cat('BP1',Bloc$BP1,'\n')
+cat('BP2',Bloc$BP2,'\n')
+cat('SizeWind',SizeWind,'\n')
+#PlotWindLocusZoom(Chro,BeginBlock, EndBlock, WindSize,DataGWAS, ChroGW,PosGW, RsGW,PvalGW,DataGC,ChroGC, PosGC, DataClump, ListRs, DataGene,ChroGE, BeginGE, EndGE, NameGene, DataBlock){
+PlotWindLocusZoom(infosig[,ChroGW],Bloc$BP1, Bloc$BP2, SizeWind,DataGWAS, ChroGW,PosGW, RsGW,PvalGW,InfoPosGWAS, ChroGC, PosGC,DataClump, infosig[,RsGW], DataGene,ChroGE, BeginGE, EndGE, NameGene, DataHaplo)
+
+
+#}
+@
 
 
 \subsection{Significance position : fdr}
