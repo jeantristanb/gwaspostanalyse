@@ -111,24 +111,41 @@ size<-paste(round(26/(ncol(DataGWASComSub))-1),"cm",sep="")
 DataGWASComSubBonf<-DataGWASComSub[DataGWASComSub$p.adjust.bonf<=LimPval,]
 DataGWASComSubBonf<-DataGWASComSub[order(DataGWASComSubBonf[,ChroGW],DataGWASComSubBonf[,PosGW]),]
 
-CmtCountSig=1
 NbWind=1
-GetBeginTab<-function(Nb)paste("\\begin{table}[ht]\n\\caption{ result for bonferroni correction table : ",Nb,"}\\centering\\begin{tabular}{c|c|c}",sep="")
-LatexOut<-GetBeginTab(NbWind)
+GetBeginTab<-function(Nb)paste("\\begin{table}[ht]\n\\caption{ result for bonferroni correction table : ",Nb,"}\n\\centering\n\\begin{tabular}{cc}",sep="")
+GetEndTab<-function(Nb)paste("\\end{tabular}\n\\label{tab:Bonf",Nb,"}\n\\end{table}\\clearpage\n",sep="")
+
 CmtSig=1
-#for(CmtSig in 1:nrow(DataGWASComSubBonf)){
-infosig<-DataGWASComSubBonf[CmtSig,]
+LatexOut=''
+NbFig=3
+for(Chro in unique(DataGWASComSubBonf[,ChroGW])){
+LatexOut<-c(LatexOut,paste("\n\\subsubsection{ Chromosome :",Chro,"}"))
+DataGWASChro<-DataGWASComSubBonf[DataGWASComSubBonf[,ChroGW]==Chro,]
+CmtCountSig=0
+NbWind=1
+for(CmtSig in 1:nrow(DataGWASChro)){
+if(CmtCountSig==0)LatexOut<-c(LatexOut,GetBeginTab(paste("Chro:", Chro,NbWind)),"")
+infosig<-DataGWASChro[CmtSig,]
+FigName=paste(DirPWD,'/figure/locus_',infosig[,RsGW],'.pdf',sep="")
+pdf(FigName,width=7*1.25, height=7)
 Bloc<-DataHaplo[DataHaplo$CHR==infosig[,ChroGW]& DataHaplo$BP1<=infosig[,PosGW] & DataHaplo$BP2>=infosig[,PosGW],]
-cat(nrow(Bloc))
-cat(nrow(infosig))
-cat('BP1',Bloc$BP1,'\n')
-cat('BP2',Bloc$BP2,'\n')
-cat('SizeWind',SizeWind,'\n')
-#PlotWindLocusZoom(Chro,BeginBlock, EndBlock, WindSize,DataGWAS, ChroGW,PosGW, RsGW,PvalGW,DataGC,ChroGC, PosGC, DataClump, ListRs, DataGene,ChroGE, BeginGE, EndGE, NameGene, DataBlock){
 PlotWindLocusZoom(infosig[,ChroGW],Bloc$BP1, Bloc$BP2, SizeWind,DataGWAS, ChroGW,PosGW, RsGW,PvalGW,InfoPosGWAS, ChroGC, PosGC,DataClump, infosig[,RsGW], DataGene,ChroGE, BeginGE, EndGE, NameGene, DataHaplo)
+dev.off()
+LatexOut=c(LatexOut,paste(infosig[,RsGW],"&\\includegraphics[scale=0.33]{",FigName,"} \\\\",sep=""))
+CmtCountSig=CmtCountSig+1
+if(CmtCountSig==NbFig){
+LatexOut<-c(LatexOut,GetEndTab(paste("Chro:", Chro,NbWind)),"")
+CmtCountSig=0
+NbWind=NbWind+1
+}
+}
+if(CmtCountSig!=NbFig & CmtCountSig>0){
+LatexOut<-c(LatexOut,GetEndTab(paste(Chro,CmtCountSig)))
+CmtCountSig=0
+}
+}
+cat(paste(LatexOut,collapse='\n') ,'\n')
 
-
-#}
 @
 
 

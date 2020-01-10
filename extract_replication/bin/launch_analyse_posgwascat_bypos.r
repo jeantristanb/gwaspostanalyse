@@ -84,7 +84,7 @@ InfoGene=opt[['info_gene']]
 ChroGE="CHR";BeginGE="BEGIN";EndGE="END";NameGene="GENE"
 Haploblock=opt[['haploblocks']]
 
-filekniti='analyse_posgwascat.Rnw'
+filekniti='analyse_posgwascat_bypos.Rnw'
 if(!file.exists(filekniti)){
 fileknit=""
 listpath=strsplit(Sys.getenv('PATH'), split=':')[[1]]
@@ -131,6 +131,9 @@ DataHaplo=read.table(Haploblock,sep='\t', header=T)
 SizeWind=opt[['size_win_kb']]*1000
 LimPval=opt[['threshpval']]
 DataClump=read.table(opt[['clump']], header=T)
-
+DirPWD=getwd()
 
 knit(fileknit)
+
+system('pdflatex analyse_posgwascat_bypos.tex')
+system('pdflatex analyse_posgwascat_bypos.tex')

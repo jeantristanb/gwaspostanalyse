@@ -93,7 +93,7 @@ DataBlock2<- DataBlock[DataBlock$CHR==Chro,]
 DataBlock2$BP12<-DataBlock2$BP1/ScaleBp
 DataBlock2$BP22<-DataBlock2$BP2/ScaleBp
 nb=2+nrow(DataGene2)
-nf <- layout(matrix(c(1,1,1,1,1,1,1,1,2,2,2,2), 3,4,byrow=T), respect=T)
+nf <- layout( matrix(c(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2),4,5,byrow=T), respect=T)
 par(mar=c(1,4,4,1))
 plot(xlim, ylim,type='n', xaxt='n', ylab='-log10(pval)')
 points(DataGWAS2$bp2, DataGWAS2$LogPval, pch=DataGWAS2$pch, col=DataGWAS2$col, bg=DataGWAS2$bg)

@@ -231,17 +231,16 @@ process AnalyzeByPos{
      file(geneinfo) from geneinfo_ch_pos
      file(haploblocks) from ch_haploblocks_pos
      file(clump) from clump_res_pos
-  publishDir params.output_dir, overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/bypos/", overwrite:true, mode:'copy'
   output :
     file("$out")
+    file('figure/*')
   script :
     pvalgwascat =  (params.head_pval_gwascat!='') ? " --pval_gwascat ${params.head_pval_gwascat} --threshpval_gwascat ${params.threshold_pval_gwascat}" : ""
     out=params.output+"_bypos.pdf"
     """
-    launch_analyse_posgwascat.r --chro_gwascat ${params.head_chr_gwascat} --bp_gwascat ${params.head_bp_gwascat} --gwas_cat $infogwas --gwas_file $gwas --chro_gwas ${params.head_chr}  --bp_gwas ${params.head_bp} --rs_gwas ${params.head_rs} $pvalgwascat --pval_gwas ${params.head_pval} --threshpval ${params.threshpval} --print_gwascat ${params.info_gwascat} --info_gene $geneinfo --haploblocks $haploblocks --clump $clump --size_win_kb ${params.size_win_kb}
-    pdflatex analyse_posgwascat.tex
-    pdflatex analyse_posgwascat.tex
-    mv analyse_posgwascat.pdf $out
+    launch_analyse_posgwascat_bypos.r --chro_gwascat ${params.head_chr_gwascat} --bp_gwascat ${params.head_bp_gwascat} --gwas_cat $infogwas --gwas_file $gwas --chro_gwas ${params.head_chr}  --bp_gwas ${params.head_bp} --rs_gwas ${params.head_rs} $pvalgwascat --pval_gwas ${params.head_pval} --threshpval ${params.threshpval} --print_gwascat ${params.info_gwascat} --info_gene $geneinfo --haploblocks $haploblocks --clump $clump --size_win_kb ${params.size_win_kb}
+    mv analyse_posgwascat_bypos.pdf $out
     """
 }
 //echo "python3 /home/jeantristan/Travail/GWAS/PythonScript/extract_posclum.py --list_info $FileCat --file_gwas $FileGWAS --wind_size $WindSize --out $Out --chro_header_info $ChrInfo --bp_header_info $BpInfo --chro_header_gwas $ChrGWAS --bp_header_gwas $BpGWAS --rs_header_gwas $RsGWAS --pval_header_gwas $PvalGWAS --bfile $bfile --maxpval $pval --r2 $R2 --file_block_ld All_block.blocks.extented.det" >> $BashFile
