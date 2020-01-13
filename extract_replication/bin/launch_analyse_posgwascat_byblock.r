@@ -11,6 +11,10 @@ library(kableExtra)
 option_list = list(
   make_option("--gwas_file", type="character",
               help="file gwas contains resultat ", metavar="character"),
+  make_option("--res_block", type="character",
+              help="bp header for gwas file", metavar="character"),
+  make_option("--bp_gwas", type="character",
+              help="bp header for gwas file", metavar="character"),
   make_option("--chro_gwas", type="character",
               help="chro header for gwas file", metavar="character"),
   make_option("--pval_gwas", type="character",
@@ -22,6 +26,8 @@ option_list = list(
   make_option("--af_gwas", type="character",
               help="beta header for gwas file", metavar="character"),
   make_option("--rs_gwas", type="character",
+              help="beta header for gwas file", metavar="character"),
+  make_option("--rs_gwascat", type="character",
               help="beta header for gwas file", metavar="character"),
   make_option("--gwas_cat", type="character",
               help="file gwas contains resultat ", metavar="character"),
@@ -48,7 +54,11 @@ option_list = list(
   make_option("--clump", type="character",
               help="file gwas contains resultat "),
   make_option("--threshpval", type="double",
-              help="file gwas contains resultat ", default=0.05)
+              help="file gwas contains resultat ", default=0.05),
+  make_option("--a1_gwas", type="character",
+              help="beta header for gwas file", metavar="character"),
+  make_option("--a0_gwas", type="character",
+              help="beta header for gwas file", metavar="character")
 )
 
 opt_parser = OptionParser(option_list=option_list);
@@ -66,6 +76,11 @@ ChroGC=opt[['chro_gwascat']]
 PosGC=opt[['bp_gwascat']]
 InfoGC=opt[['print_gwascat']]
 PvalGC=opt[['pval_gwascat']]
+RsGC=opt[['rs_gwascat']]
+
+#ChroGC='Chro37';PosGC='PosBegin37';InfoGC='DISEASE.TRAIT,REPORTED.GENE.S.,MAPPED_GENE,INITIAL.SAMPLE.SIZE';#;RsGC='RSID'
+#RsGC='SNPS'
+#PvalGW="PVALUE_RE2";ChroGW='chr';PosGW='bp';RsGW="RSID";AfGW=NULL;BetaGW=NULL;A1GW=NULL;A0GW=NULL;SeGW=NULL;SeGW=NULL;
 
 GwasFile=opt[['gwas_file']]
 ChroGW=opt[['chro_gwas']]
@@ -73,6 +88,8 @@ PosGW=opt[['bp_gwas']]
 SeGW=opt[['se_gwas']]
 BetaGW=opt[['beta_gwas']]
 RsGW=opt[['rs_gwas']]
+A1GW=opt[['a1_gwas']];
+A0GW=opt[['a0_gwas']]
 PvalGW=opt[['pval_gwas']]
 AfGW=opt[['af_gwas']]
 LimPvalGC=opt[['threshpval_gwascat']]
@@ -129,6 +146,7 @@ DataHaplo=read.table(Haploblock,sep='\t', header=T)
 SizeWind=opt[['size_win_kb']]*1000
 LimPval=opt[['threshpval']]
 DataClump=read.table(opt[['clump']], header=T)
+DataResBlockI=read.table(opt[['res_block']], header=T)
 DirPWD=getwd()
 
 knit(fileknit)

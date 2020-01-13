@@ -64,6 +64,7 @@ DataGWASCom$p.adjust.bonf<-p.adjust(DataGWASCom[,PvalGW],method="bonferroni")
 DataGWASCom$p.adjust.fdr<-p.adjust(DataGWASCom[,PvalGW],method="fdr")
 InfoPosGWAS<-MakeGwasCatInfo(DataGWASCat, ChroGC,PosGC,InfoGC)
 DataGWASComSub<-merge(DataGWASCom[,c(ChroGW,RsGW,PosGW,SeGW,BetaGW,PvalGW,AfGW,'p.adjust.bonf','p.adjust.fdr')],InfoPosGWAS,by.x=c(ChroGW,PosGW), by.y=c(ChroGC,PosGC))
+listout_excel[['resbypos']]=DataGWASComSub
 @
 \section{Parameters}
 Todo\\
@@ -109,7 +110,7 @@ size<-paste(round(26/(ncol(DataGWASComSub))-1),"cm",sep="")
 <<plotwindbonf,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "QQplot of pvalue of gwas result found in gwas catalog",fig.pos="H", fig.width=4, fig.height=4>>=
 #PlotWindLocusZoom(Chro,BeginBlock, EndBlock, WindSize,DataGWAS, ChroGW,PosGW, RsGW,PvalGW,DataGC, DataClump, ListRs, DataGene,ChroGE, BeginGE, EndGE, NameGene)
 DataGWASComSubBonf<-DataGWASComSub[DataGWASComSub$p.adjust.bonf<=LimPval,]
-DataGWASComSubBonf<-DataGWASComSub[order(DataGWASComSubBonf[,ChroGW],DataGWASComSubBonf[,PosGW]),]
+DataGWASComSubBonf<-DataGWASComSubBonf[order(DataGWASComSubBonf[,ChroGW],DataGWASComSubBonf[,PosGW]),]
 
 NbWind=1
 GetBeginTab<-function(Nb)paste("\\begin{table}[ht]\n\\caption{ result for bonferroni correction table : ",Nb,"}\n\\centering\n\\begin{tabular}{cc}",sep="")
@@ -123,10 +124,12 @@ LatexOut<-c(LatexOut,paste("\n\\subsubsection{ Chromosome :",Chro,"}"))
 DataGWASChro<-DataGWASComSubBonf[DataGWASComSubBonf[,ChroGW]==Chro,]
 CmtCountSig=0
 NbWind=1
+DirFig=paste(DirPWD,'/figure/loczm/', sep='')
+dir.create(DirFig)
 for(CmtSig in 1:nrow(DataGWASChro)){
 if(CmtCountSig==0)LatexOut<-c(LatexOut,GetBeginTab(paste("Chro:", Chro,NbWind)),"")
 infosig<-DataGWASChro[CmtSig,]
-FigName=paste(DirPWD,'/figure/locus_',infosig[,RsGW],'.pdf',sep="")
+FigName=paste(DirFig,gsub(':','_',infosig[,RsGW]),'.pdf',sep="")
 pdf(FigName,width=7*1.25, height=7)
 Bloc<-DataHaplo[DataHaplo$CHR==infosig[,ChroGW]& DataHaplo$BP1<=infosig[,PosGW] & DataHaplo$BP2>=infosig[,PosGW],]
 PlotWindLocusZoom(infosig[,ChroGW],Bloc$BP1, Bloc$BP2, SizeWind,DataGWAS, ChroGW,PosGW, RsGW,PvalGW,InfoPosGWAS, ChroGC, PosGC,DataClump, infosig[,RsGW], DataGene,ChroGE, BeginGE, EndGE, NameGene, DataHaplo)

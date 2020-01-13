@@ -1,0 +1,195 @@
+
+\documentclass[12pt]{article}
+
+%to test two table a cote
+\usepackage{longtable}
+
+
+
+\usepackage{times}
+\usepackage{hyperref}
+% position in figure => [H] => figure/table positioning in the place write
+\usepackage{float}
+%option booktabs=T, dans kable
+\usepackage{booktabs}
+%to use < and > directly in latex
+\usepackage[T1]{fontenc}
+%  \rowcolors
+\usepackage[table]{xcolor}
+\usepackage{multicol}
+
+\usepackage{lscape}
+\newcommand{\subsubsubsection}[1]{\paragraph{#1}\mbox{}\\}
+\setcounter{secnumdepth}{4}
+\setcounter{tocdepth}{4}
+% seting level of numbering (default for "report" is 3). With ''-1'' you have non number also for chapters
+
+\usepackage{subfig}
+\usepackage{array}
+\usepackage{multicol}
+\hypersetup{pdfpagemode=UseNone} % don't show bookmarks on initial view
+\hypersetup{colorlinks, urlcolor={blue}}
+
+
+% revise margins
+\setlength{\headheight}{0.0in}
+\setlength{\topmargin}{0.0in}
+\setlength{\headsep}{0.0in}
+\setlength{\textheight}{8.65in}
+\setlength{\footskip}{0.35in}
+\setlength{\oddsidemargin}{0.0in}
+\setlength{\evensidemargin}{0.0in}
+\setlength{\textwidth}{6.5in}
+
+\setlength{\parskip}{6pt}
+\setlength{\parindent}{0pt}
+\title{Report for transferability : analyse by position}
+\date{\today}
+\author{Nextflow \thanks{SBIMB}, SBMIB}
+\begin{document}
+
+
+
+<<charge_function,  comment=NA, results = 'hide', echo=FALSE >>=
+
+if(!is.null(PvalGC) & !is.null(LimPvalGC)){
+DataGWASCat<-DataGWASCat[DataGWASCat[,PvalGC]<=LimPvalGC,]
+}
+DataGC<-MakeGwasCatInfo(DataGWASCat,ChroGC,PosGC, paste(InfoGC,',', RsGC,sep=''))
+
+DataResBlock<-merge(DataResBlockI,DataGWAS, by.x='RsClump', by.y=RsGW)
+DataGWASAll<-merge(DataResBlock,DataGC, by.x=c("Chro", "BPInfo"), by.y=c(ChroGC,PosGC), all.x=T)
+DataGWASAll<-DataGWASAll[!is.na(DataGWASAll$nbpubli),]
+
+
+## merge data 
+Cmt<-1
+for(Col in c(RsGC,strsplit(InfoGC, split=',')[[1]], 'RsClump')){
+tmp<-aggregate(as.formula(paste(Col,"~Chro+BeginBlock+EndBlock")), data=DataGWASAll, FUN=function(x)paste(unique(strspl(x)), collapse=", "))
+if(Cmt==1)GWASWind<-tmp
+else GWASWind<-merge(GWASWind, tmp,all=T,by=c("Chro","BeginBlock","EndBlock"))
+Cmt<-Cmt+1
+}
+DataGWASAll$Wind<-paste(DataGWASAll$Chro,DataGWASAll$BeginBlock,DataGWASAll$EndBlock)
+#PvalGW="PVALUE_RE2";ChroGW='chr';PosGW='bp';RsGW="RSID";AfGW=NULL
+Cmt<-1
+for(Wind in unique(DataGWASAll$Wind)){
+SubData<-DataGWASAll[DataGWASAll$Wind==Wind,]
+PClump<-min(SubData$PClump)
+Rslump<-SubData$RsClump[which.min(SubData$PClump)]
+Chrolump=unique(SubData$Chro)
+if(!is.null(AfGW))AfClump<-SubData[which.min(SubData$PClump), AfGW] else AfClump=NA
+if(!is.null(BetaGW))BetaClump<-SubData[which.min(SubData$PClump),BetaGW] else BetaClump=NA
+if(!is.null(A1GW ))A1Clump<-SubData[which.min(SubData$PClump), A1GW] else A1Clump=NA
+if(!is.null(A0GW ))A0Clump<-SubData[which.min(SubData$PClump), A0GW] else A0Clump=NA
+if(!is.null(SeGW))SeClump<-SubData[which.min(SubData$PClump), SeGW] else SeClump=NA
+if(!is.null(PvalGW))PWClump<-SubData[which.min(SubData$PClump), PvalGW] else PWClump<-NA
+if(Cmt==1)DataPclumpMin<-data.frame(Wind=Wind,MinPClump=PClump,MinPRsClump=Rslump, MinAfClump=AfClump, MinBetaClump=BetaClump, MinA1Clump=A1Clump, MinA0Clump=A0Clump, MinSeClump=SeClump, PClump=PWClump)
+else DataPclumpMin<-rbind(DataPclumpMin ,data.frame(Wind=Wind,MinPClump=PClump,MinPRsClump=Rslump, MinAfClump=AfClump, MinBetaClump=BetaClump, MinA1Clump=A1Clump, MinA0Clump=A0Clump, MinSeClump=SeClump, PClump=PWClump))
+Cmt<-Cmt+1
+}
+GWASWind$Wind<-paste(GWASWind$Chro,GWASWind$BeginBlock,GWASWind$EndBlock)
+DataAllWithInfo<-merge(GWASWind,DataPclumpMin, by="Wind")
+DataAllWithInfo$p.adjust.bonf=p.adjust(DataAllWithInfo$MinPClump, 'bonferroni')
+listout_excel[['res_windld']]=DataAllWithInfo
+
+@
+\section{Parameters}
+Todo\\
+\section{Descriptifs}
+\begin{itemize}
+\item Rs number in gwas catalog : \Sexpr{nrow(DataGC)}, 
+%\item Windows with Rs and clumped data \Sexpr{nrow(DataAllWithInfo)}
+%\item NbWindows significant with bonferroni \Sexpr{length(which(DataAllWithInfo$p.adjust.bonf<LimPval))}
+\end{itemize}
+
+\section{Significance}
+\subsection{QQ plot}
+QQ plot using all common position between GWAS catalog and GWAS 
+<<qqplot,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "QQplot of pvalue of gwas result found in gwas catalog",fig.pos="H", fig.width=4, fig.height=4>>=
+qq(DataAllWithInfo[,'MinPClump'])
+@
+\subsection{Significance position : bonferroni}
+\Sexpr{length(which(DataAllWithInfo$p.adjust.bonf<LimPval))} positions found after an adjustment of bonferroni and threshold of \Sexpr{LimPval}
+\begin{landscape}
+<<tableresbonf,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "QQplot of pvalue of gwas result found in gwas catalog",fig.pos="H", fig.width=4, fig.height=4>>=
+#Chro BeginBlock  EndBlock
+# [1] "Wind"                "Chro"                "BeginBlock"         
+# [4] "EndBlock"            "SNPS"                "DISEASE.TRAIT"      
+# [7] "REPORTED.GENE.S."    "MAPPED_GENE"         "INITIAL.SAMPLE.SIZE"
+#[10] "RsClump"             "MinPClump"           "MinPRsClump"        
+#[13] "MinAfClump"          "MinBetaClump"        "MinA1Clump"         
+#[16] "MinA0Clump"          "MinSeClump"          "PWaldClump"         
+#[19] "p.adjust.bonf"      
+
+DataAllWithInfo2<-DataAllWithInfo[order(DataAllWithInfo[,'Chro'],DataAllWithInfo[,'BeginBlock']),]
+DataAllWithInfo2<-DataAllWithInfo[DataAllWithInfo$p.adjust.bonf<=LimPval, !(names(DataAllWithInfo2) %in% 'Wind')]
+DataAllWithInfo2[,'MinPClump']<-as.characterspe(DataAllWithInfo2[,'MinPClump'], 2)
+DataAllWithInfo2[,'p.adjust.bonf']<-as.characterspe(DataAllWithInfo2[,'p.adjust.bonf'], 2)
+size<-paste(round(26/(ncol(DataAllWithInfo2))-1),"cm",sep="")
+kable(DataAllWithInfo2,"latex",caption=paste("significant pvalue found in gwas catalog"),booktabs = T, digits=1, row.names=F,  longtable = T,col.names=gsub("_"," ", names(DataAllWithInfo2)))    %>%  kable_styling(font_size = 8) %>% kable_styling(latex_options = c("striped", "HOLD_position")) #%>%  column_spec(2:(ncol(DataAllWithInfo2)+1), width = size) %>%  column_spec(1,width='2cm') 
+@
+\end{landscape}
+\subsection{Plot}
+
+%\begin{table}[ht]
+%\caption{SLC9A4: found in CKD-EPI,MDRD,  Sc}
+%\centering
+%\begin{tabular}{c|c|c}
+%        Var&Mega&Meta\\
+%        Sc&\includegraphics[scale=0.3]{Wind/PlotWind/PlotMega_0.1_0.001_6e-05/agesexpca_ScNew_All/2_103121269_103180863.jpeg}&\includegraphics[scale=0.3]{Wind/PlotWind/PlotMeta_0.1_0.001_6e-05/agesexpca_ScNew_PVALUE-RE2/2_103121269_103180863.jpeg}\\
+%        MDRD4&\includegraphics[scale=0.3]{Wind/PlotWind/PlotMega_0.1_0.001_6e-05/agesexpca_MDRDNoEth_All/2_103121269_103180863.jpeg}&\includegraphics[scale=0.3]{Wind/PlotWind/PlotMeta_0.1_0.001_6e-05/agesexpca_MDRDNoEth_PVALUE-RE2/2_103121269_103180863.jpeg}\\
+%        CKD-EPI&\includegraphics[scale=0.3]{Wind/PlotWind/PlotMega_0.1_0.001_6e-05/agesexpca_CKDEPINoEth_All/2_103121269_103180863.jpeg}&\includegraphics[scale=0.3]{Wind/PlotWind/PlotMeta_0.1_0.001_6e-05/agesexpca_CKDEPINoEth_PVALUE-RE2/2_103121269_103180863.jpeg}\\
+%\end{tabular}
+%\label{tab:SLC9A4}
+%\end{table}
+
+<<plotwindbonf,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "QQplot of pvalue of gwas result found in gwas catalog",fig.pos="H", fig.width=4, fig.height=4>>=
+#PlotWindLocusZoom(Chro,BeginBlock, EndBlock, WindSize,DataGWAS, ChroGW,PosGW, RsGW,PvalGW,DataGC, DataClump, ListRs, DataGene,ChroGE, BeginGE, EndGE, NameGene)
+DataAllWithInfoBonf<-DataAllWithInfo[DataAllWithInfo$p.adjust.bonf<=LimPval, names(DataAllWithInfo)!='Wind']
+DataAllWithInfoBonf<-DataAllWithInfoBonf[order(DataAllWithInfoBonf[,'Chro'],DataAllWithInfoBonf[,'BeginBlock']),]
+
+NbWind=1
+GetBeginTab<-function(Nb)paste("\\begin{table}[ht]\n\\caption{ result for bonferroni correction table : ",Nb,"}\n\\centering\n\\begin{tabular}{cc}",sep="")
+GetEndTab<-function(Nb)paste("\\end{tabular}\n\\label{tab:Bonf",Nb,"}\n\\end{table}\\clearpage\n",sep="")
+
+CmtSig=1
+LatexOut=''
+NbFig=3
+DirFig=paste(DirPWD,'/figure/loczm/',sep='')
+if(!dir.exists(DirFig))dir.create(DirFig, recursive=T)
+for(Chro in unique(DataAllWithInfoBonf[,'Chro'])){
+LatexOut<-c(LatexOut,paste("\n\\subsubsection{ Chromosome :",Chro,"}"))
+DataGWASChro<-DataAllWithInfoBonf[DataAllWithInfoBonf[,'Chro']==Chro,]
+CmtCountSig=0
+NbWind=1
+for(CmtSig in 1:nrow(DataGWASChro)){
+if(CmtCountSig==0)LatexOut<-c(LatexOut,GetBeginTab(paste("Chro:", Chro,NbWind)),"")
+infosig<-DataGWASChro[CmtSig,]
+FigName=paste(DirFig,'/',infosig[,'Chro'],'_',infosig$BeginBlock,'_',infosig$EndBlock,'.pdf',sep="")
+pdf(FigName,width=7*1.25, height=7)
+#Bloc<-DataHaplo[DataHaplo$CHR==infosig[,ChroGW]& DataHaplo$BP1<=infosig[,PosGW] & DataHaplo$BP2>=infosig[,PosGW],]
+#if(Cmt==1)DataPclumpMin<-data.frame(Wind=Wind,MinPClump=PClump,MinPRsClump=Rslump, MinAfClump=AfClump, MinBetaClump=BetaClump, MinA1Clump=A1Clump, MinA0Clump=A0Clump, MinSeClump=SeClump, PClump=PWClump)
+PlotWindLocusZoom(infosig[,'Chro'],infosig$BeginBlock, infosig$EndBlock, SizeWind,DataGWAS, ChroGW,PosGW, RsGW,PvalGW,DataGC, ChroGC, PosGC,DataClump, infosig[,'MinPRsClump'], DataGene,ChroGE, BeginGE, EndGE, NameGene, DataHaplo)
+dev.off()
+LatexOut=c(LatexOut,paste(paste(infosig[,'Chro'],infosig$BeginBlock, infosig$EndBlock,sep=':'),"&\\includegraphics[scale=0.33]{",FigName,"} \\\\",sep=""))
+CmtCountSig=CmtCountSig+1
+if(CmtCountSig==NbFig){
+LatexOut<-c(LatexOut,GetEndTab(paste("Chro:", Chro,NbWind)),"")
+CmtCountSig=0
+NbWind=NbWind+1
+}
+}
+if(CmtCountSig!=NbFig & CmtCountSig>0){
+LatexOut<-c(LatexOut,GetEndTab(paste(Chro,CmtCountSig)))
+CmtCountSig=0
+}
+}
+cat(paste(LatexOut,collapse='\n') ,'\n')
+
+@
+
+
+
+\end{document}
+

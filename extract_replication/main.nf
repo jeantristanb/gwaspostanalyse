@@ -90,6 +90,7 @@ params.gene_file_ftp="ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/re
 params.head_bp_gwascat="Chro37"
 params.head_chro_gwascat="Pos37"
 params.head_pval_gwascat="P.VALUE"
+params.head_rs_gwascat="SNPS"
 //"SNPS"	"DATE.ADDED.TO.CATALOG"	"PUBMEDID"	"FIRST.AUTHOR"	"DATE"	"JOURNAL"	"LINK"	"STUDY"	"DISEASE.TRAIT"	"INITIAL.SAMPLE.SIZE"	"REPLICATION.SAMPLE.SIZE"	"REGION"	"CHR_ID"	"CHR_POS"	"REPORTED.GENE.S."	"MAPPED_GENE"	"UPSTREAM_GENE_ID"	"DOWNSTREAM_GENE_ID"	"SNP_GENE_IDS"	"UPSTREAM_GENE_DISTANCE"	"DOWNSTREAM_GENE_DISTANCE"	"STRONGEST.SNP.RISK.ALLELE"	"MERGED"	"SNP_ID_CURRENT"	"CONTEXT"	"INTERGENIC"	"RISK.ALLELE.FREQUENCY"	"P.VALUE"	"PVALUE_MLOG"	"P.VALUE..TEXT."	"OR.or.BETA"	"X95..CI..TEXT."	"PLATFORM..SNPS.PASSING.QC."	"CNV"	"MAPPED_TRAIT"	"MAPPED_TRAIT_URI"	"STUDY.ACCESSION"	"GENOTYPING.TECHNOLOGY"	"PosBegin38"	"PosEnd38"	"Chr38"	"Ref"	"Alt"	"Chro37"	"PosBegin37"	"PosEnd37"
 
 params.info_gwascat="DISEASE.TRAIT,REPORTED.GENE.S.,MAPPED_GENE,INITIAL.SAMPLE.SIZE"
@@ -130,7 +131,7 @@ process MergeBlocsBedFile{
        file(allfile) from ch_block_merg
      publishDir "${params.output_dir}/blocs/", overwrite:true, mode:'copy'
      output :
-        file(out) into (ch_haploblocks, ch_haploblocks_block, ch_haploblocks_pos)
+        file(out) into (ch_haploblocks, ch_haploblocks_byblock, ch_haploblocks_bypos)
      script :
         out='block_all.blocks' 
         allfilejoin=allfile.join(",")
@@ -141,14 +142,14 @@ process MergeBlocsBedFile{
 }
 }else{
 ch_haploblocks=Channel.fromPath(params.haploblocks)
-ch_haploblocks_block=Channel.fromPath(params.haploblocks)
-ch_haploblocks_pos=Channel.fromPath(params.haploblocks)
+ch_haploblocks_byblock=Channel.fromPath(params.haploblocks)
+ch_haploblocks_bypos=Channel.fromPath(params.haploblocks)
 }
 if(params.genes_file==""){
 process GetGeneFile{
      publishDir "${params.output_dir}/genes/", overwrite:true, mode:'copy'
      output:
-       file(out) into (geneinfo_ch_pos, geneinfo_ch_ldwind) 
+       file(out) into (geneinfo_ch_pos, geneinfo_ch_byblock) 
      script :
        out='gene_info.gene'
        """
@@ -210,9 +211,9 @@ process ComputedReplication{
       file("${out}.clump.bypos") into clump_betweenpos
       file("${out}.clump.byrs") into clump_usingrs
       file("${out}.in.list_info") into res_bypos
-      file("${out}.sub_gwas") into file_sub_gwas 
-      file("${out}.clump.ldbloc.detail") into clump_ldbloc
-      file("${out}.plk.clumped") into (clump_res_block,clump_res_pos)
+      file("${out}.sub_gwas") into (file_sub_gwas_bypos,file_sub_gwas_byblock)
+      file("${out}.clump.ldbloc.detail") into res_byblock
+      file("${out}.plk.clumped") into (clump_res_byblock,clump_res_pos)
    script :
      plk=bed.baseName
      out=params.output
@@ -227,22 +228,52 @@ process AnalyzeByPos{
   input :
      file(infogwas) from fileinfogwas_ana_bypos 
      file(file_res) from res_bypos
-     file(gwas) from file_sub_gwas
+     file(gwas) from file_sub_gwas_bypos
      file(geneinfo) from geneinfo_ch_pos
-     file(haploblocks) from ch_haploblocks_pos
+     file(haploblocks) from ch_haploblocks_bypos
      file(clump) from clump_res_pos
   publishDir "${params.output_dir}/bypos/", overwrite:true, mode:'copy'
   output :
     file("$out")
+    file("$outxlxs")
     file('figure/*')
   script :
     pvalgwascat =  (params.head_pval_gwascat!='') ? " --pval_gwascat ${params.head_pval_gwascat} --threshpval_gwascat ${params.threshold_pval_gwascat}" : ""
     out=params.output+"_bypos.pdf"
+    outxlxs=params.output+"_bypos.xlsx"
     """
     launch_analyse_posgwascat_bypos.r --chro_gwascat ${params.head_chr_gwascat} --bp_gwascat ${params.head_bp_gwascat} --gwas_cat $infogwas --gwas_file $gwas --chro_gwas ${params.head_chr}  --bp_gwas ${params.head_bp} --rs_gwas ${params.head_rs} $pvalgwascat --pval_gwas ${params.head_pval} --threshpval ${params.threshpval} --print_gwascat ${params.info_gwascat} --info_gene $geneinfo --haploblocks $haploblocks --clump $clump --size_win_kb ${params.size_win_kb}
     mv analyse_posgwascat_bypos.pdf $out
+    mv resume_tab.xlsx $outxlxs
     """
 }
+
+fileinfogwas_ana_byblock=Channel.fromPath(params.gwas_cat)
+filegwas_byblock=Channel.fromPath(params.file_gwas)
+process AnalyzeByBlock{
+  input :
+     file(infogwas) from fileinfogwas_ana_byblock
+     file(file_res) from res_byblock
+     file(gwas) from file_sub_gwas_byblock
+     file(geneinfo) from geneinfo_ch_byblock
+     file(haploblocks) from ch_haploblocks_byblock
+     file(clump) from clump_res_byblock
+  publishDir "${params.output_dir}/byblock/", overwrite:true, mode:'copy'
+  output :
+    file("$out")
+    file("$outxlxs")
+    file('figure/*')
+  script :
+    pvalgwascat =  (params.head_pval_gwascat!='') ? " --pval_gwascat ${params.head_pval_gwascat} --threshpval_gwascat ${params.threshold_pval_gwascat}" : ""
+    out=params.output+"_bypos.pdf"
+    outxlxs=params.output+"_bypos.xlsx"
+    """
+    launch_analyse_posgwascat_byblock.r --res_block $file_res --chro_gwascat ${params.head_chr_gwascat} --bp_gwascat ${params.head_bp_gwascat} --gwas_cat $infogwas --gwas_file $gwas --chro_gwas ${params.head_chr}  --bp_gwas ${params.head_bp} --rs_gwas ${params.head_rs} $pvalgwascat --pval_gwas ${params.head_pval} --threshpval ${params.threshpval} --print_gwascat ${params.info_gwascat} --info_gene $geneinfo --haploblocks $haploblocks --clump $clump --size_win_kb ${params.size_win_kb} --rs_gwascat ${params.head_rs_gwascat} --a1_gwas ${params.head_A1} --a0_gwas ${params.head_A0}
+    mv analyse_posgwascat_byblock.pdf $out
+    mv resume_tab.xlsx $outxlxs
+    """
+}
+
 //echo "python3 /home/jeantristan/Travail/GWAS/PythonScript/extract_posclum.py --list_info $FileCat --file_gwas $FileGWAS --wind_size $WindSize --out $Out --chro_header_info $ChrInfo --bp_header_info $BpInfo --chro_header_gwas $ChrGWAS --bp_header_gwas $BpGWAS --rs_header_gwas $RsGWAS --pval_header_gwas $PvalGWAS --bfile $bfile --maxpval $pval --r2 $R2 --file_block_ld All_block.blocks.extented.det" >> $BashFile
 
 

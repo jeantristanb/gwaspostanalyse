@@ -7,6 +7,9 @@ if(Cmt==1)DataF<-DataHead
 else DataF<-merge(DataF,DataHead,all=T, by=c(Chro,Pos))
 Cmt<-Cmt+1
 }
+tmpnbpubli<-aggregate(as.formula(paste(head,"~",paste(Chro,Pos,sep="+"),sep="")), data=DataI, FUN=length)
+names(tmpnbpubli)<-c(Chro,Pos,'nbpubli')
+DataF<-merge(DataF,tmpnbpubli)
 DataF
 }
 as.characterspe<-function(x,round){
@@ -115,3 +118,9 @@ text(c(xpostxt,xpostxt), c(CmtGene,CmtGene)-0.25, DataGene2[CmtGene,'GENE'])
 }
 }
 }
+
+strspl=function(x, sep=";"){
+x<-as.character(x)
+gsub(" $", "", gsub("^ ", "",unlist(strsplit(x, split=sep))))
+}
+
