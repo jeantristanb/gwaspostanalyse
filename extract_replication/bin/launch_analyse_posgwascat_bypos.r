@@ -29,6 +29,8 @@ option_list = list(
               help="file gwas contains resultat ", metavar="character"),
   make_option("--bp_gwascat", type="character",
               help="file gwas contains resultat ", metavar="character"),
+  make_option("--bp_gwas", type="character",
+              help="file gwas contains resultat ", metavar="character"),
   make_option("--af_gwascat", type="character",
               help="file gwas contains resultat ", metavar="character"),
   make_option("--size_win_kb", type="double",
@@ -82,7 +84,7 @@ InfoGene=opt[['info_gene']]
 ChroGE="CHR";BeginGE="BEGIN";EndGE="END";NameGene="GENE"
 Haploblock=opt[['haploblocks']]
 
-filekniti='analyse_posgwascat_byblock.Rnw'
+filekniti='analyse_posgwascat_bypos.Rnw'
 if(!file.exists(filekniti)){
 fileknit=""
 listpath=strsplit(Sys.getenv('PATH'), split=':')[[1]]
@@ -137,5 +139,5 @@ options(java.parameters = "-Xmx8000m")
 write.xlsx(listout_excel,file= paste("resume_tab.xlsx",sep=""))
 
 
-system('pdflatex analyse_posgwascat_byblock')
-system('pdflatex analyse_posgwascat_byblock')
+system('pdflatex analyse_posgwascat_bypos')
+system('pdflatex analyse_posgwascat_bypos')
