@@ -81,7 +81,7 @@ DataGWASCat2$col[DataGWASCat2[,PosGC] %in% DataGWAS2[DataGWAS2[, RsGW] %in% List
 PosGWASCat<-DataGWAS2[,PosGW] %in% DataGWASCat2[,PosGC]
 DataGWAS2$bg[PosGWASCat]<-ColGWAS
 DataGWAS2$col[PosGWASCat]<-ColG
-DataGWAS2$text[PosGWASCat]<-DataGWAS2$RSID[PosGWASCat]
+DataGWAS2$text[PosGWASCat]<-DataGWAS2[PosGWASCat, RsGW]
 
 DataGene$BEGIN2<-DataGene[,BeginGE]/ScaleBp
 DataGene$END2<-DataGene[,EndGE]/ScaleBp
@@ -100,7 +100,7 @@ nf <- layout( matrix(c(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2),4,5,byrow=T), re
 par(mar=c(1,4,4,1))
 plot(xlim, ylim,type='n', xaxt='n', ylab='-log10(pval)')
 points(DataGWAS2$bp2, DataGWAS2$LogPval, pch=DataGWAS2$pch, col=DataGWAS2$col, bg=DataGWAS2$bg)
-text(DataGWAS2$bp2[!is.na(DataGWAS2$RSID)], DataGWAS2$LogPval[!is.na(DataGWAS2$RSID)]*1.05,  DataGWAS2$text[!is.na(DataGWAS2$RSID)], cex=0.8, col='red')
+text(DataGWAS2$bp2[!is.na(DataGWAS2[,RsGW])], DataGWAS2$LogPval[!is.na(DataGWAS2[,RsGW])]*1.05,  DataGWAS2$text[!is.na(DataGWAS2[,RsGW])], cex=0.8, col='red')
 par(mar=c(5,4,0,1))
 
 plot(xlim, c(0,nb), type='n', yaxt='n',xlab=paste('chr', Chro,' (Mb)', sep=''), ylab='')

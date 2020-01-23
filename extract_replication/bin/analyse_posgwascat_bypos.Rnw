@@ -89,23 +89,12 @@ DataGWASComSub2<-DataGWASComSub[DataGWASComSub$p.adjust.bonf<=LimPval, !(names(D
 DataGWASComSub2[,PvalGW]<-as.characterspe(DataGWASComSub2[,PvalGW], 2)
 DataGWASComSub2[,PvalGW]<-as.characterspe(DataGWASComSub2[,'p.adjust.bonf'], 2)
 size<-paste(round(26/(ncol(DataGWASComSub))-1),"cm",sep="")
-#kable(DataGWASComSub2,"latex",caption=paste("significant pvalue found in gwas catalog"),booktabs = T, digits=1, row.names=F,  longtable = T,col.names=gsub("_"," ", names(DataGWASComSub2)))    %>%  kable_styling(font_size = 8) %>% kable_styling(latex_options = c("striped", "HOLD_position")) %>%  column_spec(2:(ncol(DataGWASComSub2)+1), width = size) %>%  column_spec(1,width='2cm') 
+kable(DataGWASComSub2,"latex",caption=paste("significant pvalue found in gwas catalog"),booktabs = T, digits=1, row.names=F,  longtable = T,col.names=gsub("_"," ", names(DataGWASComSub2)))    %>%  kable_styling(font_size = 8) %>% kable_styling(latex_options = c("striped", "HOLD_position")) %>%  column_spec(2:(ncol(DataGWASComSub2)+1), width = size) %>%  column_spec(1,width='2cm') 
 #%>% column_spec(2:(ncol(ResF)), width = "5em")  %>% column_spec(1, width = "6em") %>% column_spec(c(ncol(ResF)+1), width = "3em") %>%  kable_styling(font_size = 8) %>% kable_styling(latex_options = c("striped", "HOLD_position"))
 @
 \end{landscape}
 \subsection{Plot}
 
-%\begin{table}[ht]
-%\caption{SLC9A4: found in CKD-EPI,MDRD,  Sc}
-%\centering
-%\begin{tabular}{c|c|c}
-%        Var&Mega&Meta\\
-%        Sc&\includegraphics[scale=0.3]{Wind/PlotWind/PlotMega_0.1_0.001_6e-05/agesexpca_ScNew_All/2_103121269_103180863.jpeg}&\includegraphics[scale=0.3]{Wind/PlotWind/PlotMeta_0.1_0.001_6e-05/agesexpca_ScNew_PVALUE-RE2/2_103121269_103180863.jpeg}\\
-%        MDRD4&\includegraphics[scale=0.3]{Wind/PlotWind/PlotMega_0.1_0.001_6e-05/agesexpca_MDRDNoEth_All/2_103121269_103180863.jpeg}&\includegraphics[scale=0.3]{Wind/PlotWind/PlotMeta_0.1_0.001_6e-05/agesexpca_MDRDNoEth_PVALUE-RE2/2_103121269_103180863.jpeg}\\
-%        CKD-EPI&\includegraphics[scale=0.3]{Wind/PlotWind/PlotMega_0.1_0.001_6e-05/agesexpca_CKDEPINoEth_All/2_103121269_103180863.jpeg}&\includegraphics[scale=0.3]{Wind/PlotWind/PlotMeta_0.1_0.001_6e-05/agesexpca_CKDEPINoEth_PVALUE-RE2/2_103121269_103180863.jpeg}\\
-%\end{tabular}
-%\label{tab:SLC9A4}
-%\end{table}
 
 <<plotwindbonf,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "QQplot of pvalue of gwas result found in gwas catalog",fig.pos="H", fig.width=4, fig.height=4>>=
 #PlotWindLocusZoom(Chro,BeginBlock, EndBlock, WindSize,DataGWAS, ChroGW,PosGW, RsGW,PvalGW,DataGC, DataClump, ListRs, DataGene,ChroGE, BeginGE, EndGE, NameGene)
