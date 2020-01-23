@@ -133,7 +133,7 @@ LimPval=opt[['threshpval']]
 DataClump=read.table(opt[['clump']], header=T)
 DirPWD=getwd()
 
-GCHeadTmp<-c(ChroGC,PosGC, PvalGC,unlist(strsplit(InfoGC, split=','))
+GCHeadTmp<-c(ChroGC,PosGC, PvalGC,unlist(strsplit(InfoGC, split=',')))
 GCHeadTmpNF<-GCHeadTmp[!(GCHeadTmp %in% names(DataGWASCat))]
 if(length(GCHeadTmpNF)>0){
 cat('not found', GCHeadTmpNF, 'in info')

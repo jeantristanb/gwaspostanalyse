@@ -71,7 +71,6 @@ else GWASWind<-merge(GWASWind, tmp,all=T,by=c("Chro","BeginBlock","EndBlock"))
 Cmt<-Cmt+1
 }
 DataGWASAll$Wind<-paste(DataGWASAll$Chro,DataGWASAll$BeginBlock,DataGWASAll$EndBlock)
-#PvalGW="PVALUE_RE2";ChroGW='chr';PosGW='bp';RsGW="RSID";AfGW=NULL
 Cmt<-1
 for(Wind in unique(DataGWASAll$Wind)){
 SubData<-DataGWASAll[DataGWASAll$Wind==Wind,]
