@@ -1,0 +1,85 @@
+
+\documentclass[12pt]{article}
+
+%to test two table a cote
+\usepackage{longtable}
+
+
+
+\usepackage{times}
+\usepackage{hyperref}
+% position in figure => [H] => figure/table positioning in the place write
+\usepackage{float}
+%option booktabs=T, dans kable
+\usepackage{booktabs}
+%to use < and > directly in latex
+\usepackage[T1]{fontenc}
+%  \rowcolors
+\usepackage[table]{xcolor}
+\usepackage{multicol}
+
+\usepackage{lscape}
+\newcommand{\subsubsubsection}[1]{\paragraph{#1}\mbox{}\\}
+\setcounter{secnumdepth}{4}
+\setcounter{tocdepth}{4}
+% seting level of numbering (default for "report" is 3). With ''-1'' you have non number also for chapters
+
+\usepackage{subfig}
+\usepackage{array}
+\usepackage{multicol}
+\hypersetup{pdfpagemode=UseNone} % don't show bookmarks on initial view
+\hypersetup{colorlinks, urlcolor={blue}}
+
+% revise margins
+\setlength{\headheight}{0.0in}
+\setlength{\topmargin}{0.0in}
+\setlength{\headsep}{0.0in}
+\setlength{\textheight}{8.65in}
+\setlength{\footskip}{0.35in}
+\setlength{\oddsidemargin}{0.0in}
+\setlength{\evensidemargin}{0.0in}
+\setlength{\textwidth}{6.5in}
+
+\setlength{\parskip}{6pt}
+\setlength{\parindent}{0pt}
+\title{Report for transferability : analyse by position}
+\date{\today}
+\author{Nextflow \thanks{SBIMB}, SBMIB}
+\begin{document}
+\maketitle
+\begin{landscape}
+<<dotable,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "QQplot of pvalue of gwas result found in gwas catalog",fig.pos="H", fig.width=4, fig.height=4>>=
+NameCSV=headCSV
+
+tmp<-gsub("(","",sapply(strsplit(NameCSV,split=" (", fixed=T),function(x){if(length(x)==1)return(" ")else return(x[2])}),fixed=T)
+head<-sapply(strsplit(NameCSV,split=" (",fixed=T),function(x)return(x[1]))
+ResHead<-data.frame(HeadType=as.character(tmp),head=head,NumPos=1:length(head))
+listres=list()
+previous=ResHead[1,1]
+CmtTmp=1
+for(Cmt in 1:length(tmp)){
+if(!(tmp[Cmt] %in% names(listres)))listres[[tmp[Cmt]]]=0
+listres[[tmp[Cmt]]]=listres[[tmp[Cmt]]]+1
+}
+for(Cmt in 1:ncol(DataCSV)){
+if(any(is.double(DataCSV[,Cmt]))){
+DataCSV[,Cmt]<-as.characterspe(DataCSV[,Cmt],2)
+}
+}
+kable(DataCSV,"latex",caption=paste("significant pvalue"), digits=3, row.names=F,  longtable = T,col.names=head, booktabs=T)    %>%  kable_styling(font_size = 8) %>% kable_styling(latex_options = c("striped", "HOLD_position")) %>% add_header_above(listres)
+
+@
+
+\end{landscape}
+
+\section{Locus Zoom}
+<<plotwindbonf,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "QQplot of pvalue of gwas result found in gwas catalog",fig.pos="H", fig.width=4, fig.height=4>>=
+
+#NbWind=1
+#GetBeginTab<-function(Nb)paste("\\begin{table}[ht]\n\\caption{ result for bonferroni correction table : ",Nb,"}\n\\centering\n\\begin{tabular}{cc}",sep="")
+#GetEndTab<-function(Nb)paste("\\end{tabular}\n\\label{tab:Bonf",Nb,"}\n\\end{table}\\clearpage\n",sep="")
+
+@
+\end{document}
+
+

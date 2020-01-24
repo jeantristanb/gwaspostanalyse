@@ -23,14 +23,15 @@ def GetSep(Sep):
 
 def parseArguments():
     parser = argparse.ArgumentParser(description='transform file and header')
-    parser.add_argument('--input_file',type=str,help="output file",required=True)
+    parser.add_argument('--input_file',type=str,help="input file",required=True)
     parser.add_argument('--out_file',type=str,help="output file",required=True)
     parser.add_argument("--info_file", help="", type=str,required=True)
-    parser.add_argument("--threshold", type=float,help="output format ldsc, default none",action="store_true")
+    parser.add_argument("--threshold", type=float,help="threshold to extract rs")
     args = parser.parse_args()
     return args
 
 #rsID,Chro,Pos,A1,A2,Beta,Se,Pval,N,freqA1,direction,Imputed,Sep,File,IsRefFile
+args=parseArguments()
 infohead=args.info_file.split(",")
 l_infohead=[x.split(":")[0] for x in infohead]
 l_filehead=[x.split(":")[1] for x in infohead]
@@ -54,7 +55,7 @@ else :
 
 
 if 'PVAL' in l_infohead :
-    nompval=l_filehead[l_infohead.index('POS')]
+    nompval=l_filehead[l_infohead.index('PVAL')]
 else :
     nompval='NA'
 
@@ -67,11 +68,11 @@ if nomchro not in Header or nompos not in Header or nompval not in Header :
    sys.exit('not found chro head '+nomchro+' or pos head '+nompos+' or pval head '+nompval+' in file '+args.input_file) 
 PosChro=Header.index(nomchro)
 PosPos=Header.index(nompos)
-PosPval=Heade.index(nompval)
+PosPval=Header.index(nompval)
 WriteRes=open(args.out_file, 'w')
 
 for line in ReadFile :
-     Spl=line.split(Sep)
+     Spl=line.split(sep)
      StrPval=Spl[PosPval]
      if StrPval!='NA' and StrPval!='Na' and StrPval!='na' and StrPval!='nan':
        FloatPval=float(Spl[PosPval])

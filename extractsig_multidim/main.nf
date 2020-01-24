@@ -20,14 +20,14 @@ import java.nio.file.Paths
 
 
 def helps = [ 'help' : 'help' ]
-allowed_params = ["cut_maf", "output_dir", "pb_around_rs", "mem_req", "work_dir","mem_req","big_time", "output","nb_cpu" , "input_dir","input_pat", "file_gwas", "gwas_cat", "pval_thresh"]
-allowed_params_blocks = ["haploblocks", "plkref_haploblocks", "plk_othopt_haploblocks"]
+allowed_params = ["cut_maf", "output_dir", "pb_around_rs", "mem_req", "work_dir","mem_req","big_time", "output","nb_cpu" , "input_dir","input_pat", "file_gwas", "pval_thresh"]
+//allowed_params_blocks = ["haploblocks", "plkref_haploblocks", "plk_othopt_haploblocks", 'pval_thresh', "around_rs"]
 allowed_params_other=["max_forks", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key","region", "AMI","maxInstances","instance-type", "instanceType", "bootStorageSize", "boot-storage-size", "max-instances", "sharedStorageMount", "shared-storage-mount", "scripts"]
-allowed_params_headinfo=["head_chr_gwascat", "head_bp_gwascat"]
-#allowed_params_head = ["head_pval", "head_freq", "head_bp", "head_chr", "head_rs", "head_beta", "head_se", "head_A1", "head_A2"]
-#allowed_params+=allowed_params_head
+allowed_params_headinfo=["head_chr_gwascat", "head_bp_gwascat", 'gwas_cat']
+//allowed_params_head = ["head_pval", "head_freq", "head_bp", "head_chr", "head_rs", "head_beta", "head_se", "head_A1", "head_A2"]
+//allowed_params+=allowed_params_head
 allowed_params+=allowed_params_other
-allowed_params+=allowed_params_blocks
+//allowed_params+=allowed_params_blocks
 allowed_params+=allowed_params_headinfo
 params.each { parm ->
   if (! allowed_params.contains(parm.key)) {
@@ -56,16 +56,8 @@ params.cut_maf = 0.01
 params.mem_req="8G"
 params.big_time="100H"
 
-#params.head_pval = "P_BOLT_LMM"
-#params.head_freq = "A1FREQ"
-#params.head_bp = "BP"
-#params.head_chr = "CHR"
-#params.head_rs = "SNP"
 params.data = ""
-#params.head_beta="BETA"
-#params.head_se="SE"
-#params.head_A1="ALLELE1"
-#params.head_A2="ALLELE0"
+params.around_rs=100000
 
 
 params.max_pval_rep=10**-6
@@ -86,14 +78,21 @@ params.genes_file=""
 params.gene_file_ftp="ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19/gencode.v19.annotation.gtf.gz"
 
 //params gwas cat 
-#params.head_bp_gwascat="Chro37"
-#params.head_chro_gwascat="Pos37"
-#params.head_pval_gwascat="P.VALUE"
-#params.head_rs_gwascat="SNPS"
+//params.head_bp_gwascat="Chro37"
+//params.head_chro_gwascat="Pos37"
+//params.head_pval_gwascat="P.VALUE"
+//params.head_rs_gwascat="SNPS"
 
 params.info_gwascat="DISEASE.TRAIT,REPORTED.GENE.S.,MAPPED_GENE,INITIAL.SAMPLE.SIZE"
 params.threshold_pval_gwascat=1
-params.threshpval=0.05
+params.pval_thresh=5*10**-8
+
+params.loczm_bin  = ""
+params.loczm_pop = "AFR"
+params.loczm_build = "hg19"
+params.loczm_source ="1000G_March2012"
+params.loczm_gwascat = ""
+
 
  
 //BedFileI=/dataE/AWIGenGWAS/shared/ResultGWAS/Ressource/locuszoom/data/1000G/genotypes/2014-10-14/EUR/chr$Chro
@@ -113,7 +112,8 @@ def configfile_analysis(file){
    def SplH=lines[0].split(sep)
    resInfo=[]
    resFile=[]
-   infoFile=[]
+   InfoFile=[]
+   TypeFile=[]
    lines.remove(0)
    PosCmp=-1
    CmtL=0
@@ -126,7 +126,10 @@ def configfile_analysis(file){
                resFile.add(splLine[cmtelem])
             }
             if(SplH[cmtelem].toUpperCase()=='INFO'){
-               resFile.add(splLine[cmtelem])
+               InfoFile.add(splLine[cmtelem])
+            }
+            if(SplH[cmtelem].toUpperCase()=='TYPE'){
+               TypeFile.add(splLine[cmtelem])
             }
             if(splLine[cmtelem]!='NA' && splLine[cmtelem]!='' && SplH[cmtelem]!='FILE' && SplH[cmtelem]!='INFO'){
                  SubRes.add(SplH[cmtelem].toUpperCase()+':'+splLine[cmtelem])
@@ -136,7 +139,7 @@ def configfile_analysis(file){
        resInfo.add(SubRes.join(','))
        CmtL+=1
    }
- return([resFile,resInfo, NumRef])
+ return([resFile,resInfo, InfoFile, TypeFile])
 }
 
 info_file=configfile_analysis(params.file_config)
@@ -144,17 +147,133 @@ info_file=configfile_analysis(params.file_config)
 
 liste_filesi_ch=Channel.fromPath(info_file[0]).merge(Channel.from(info_file[1]))
 
-process ExtractSig{
-    memory ma_mem_req
+process ExtractRsSig{
     input :
-      set file(file_assoc), val(info_file) from liste_filesi_ch
+      set file(file_assoc), val(head_file) from liste_filesi_ch
     output :
       file(filers) into (listrs_sig)
     script :
-       newfile_assoc=file_assoc+".modif"
+       filers=file_assoc+".rs"
        """
-       extract_rssig.py  --input_file $file_assoc --out_file $newfile_assoc --info_file $info_file --threshold ${params.pval_thresh}
+       extract_rssig.py  --input_file $file_assoc --out_file $filers --info_file $head_file --threshold ${params.pval_thresh}
        """
 }
 
 
+listrs_sig_col=listrs_sig.collect()
+process MergeSigRs{
+   input : 
+      file(allfilers) from listrs_sig_col
+   output :
+      file(allrs) into (allrs_sig,allrs_sig_plot)
+   script :
+      allrs='allrs.rs'
+      allfilersjoin=allfilers.join(" ")
+      """
+      cat $allfilersjoin|sort|uniq > $allrs
+      """
+}
+
+liste_filesi_ch_2=Channel.fromPath(info_file[0]).merge(Channel.from(info_file[1])).merge(Channel.from(info_file[2])).combine(allrs_sig)
+process ExtractInfoSig{
+       input :
+         set file(file_assoc), val(head_file), val(info_file), file(allrs) from liste_filesi_ch_2
+       output :
+         file(fileout) into listres_sig
+       script:
+        fileout=file_assoc+".sub_file"
+        """
+        extract_possig.py  --input_file $file_assoc --out_file $fileout --head_info $head_file --info_file $allrs
+        """
+}
+asso_sig_col=listres_sig.collect()
+
+process MergeInfoSig{
+       input :
+         file(filesub) from asso_sig_col
+       publishDir params.output_dir, overwrite:true, mode:'copy'
+       output :
+          file(filemerge) into resumcsv
+       script : 
+         filemerge=params.output+'.csv'
+         listfile=filesub.join(',')
+         """
+         mergefile_sig.r $listfile  ${params.output}
+         """ 
+}
+
+process DefineLocusZoom{
+   input :
+       file(allrs) from allrs_sig_plot
+   output:
+       stdout into listvalposchro
+   script :
+      """
+      cat $allrs |awk '{print \$1\":\"\$2}'
+      """ 
+}
+poschro_ch = Channel.create()
+check = Channel.create()
+listvalposchro.flatMap { list_str -> list_str.split() }.tap ( check) .set { poschro_ch}
+poschro_chF=Channel.fromPath(info_file[0]).merge(Channel.from(info_file[1])).merge(Channel.from(info_file[2])).merge(Channel.from(info_file[3])).combine(poschro_ch)
+
+
+
+
+process FormatForLocusZoom{
+    input :
+      set file(file_assoc), val(head_file), val(info_file), val(typefile),val(poschro) from poschro_chF
+    output :
+      set stdout, val(poschro),file(fileout), val(info_file), val(typefile) into chforgwascat
+     script :
+     fileout="formatforgwascat.out"
+     """
+     extract_position_forgwascat.py --input_file $file_assoc --out_file $fileout --head_info $head_file --chropos $poschro --around_rs ${params.around_rs}
+     """
+}
+
+chforgwascat_F=chforgwascat.filter { it[0] !='NA\n' }
+
+
+if(params.loczm_gwascat!=""){
+loczm_gwascat=" --gwas-cat ${params.loczm_gwascat}"
+}else{
+loczm_gwascat=""
+}
+
+process PlotLocusZoom{
+  input :
+    set val(rs), val(poschro),file(filegwas), val(info_file), val(typefile) from chforgwascat_F
+  publishDir "${params.output_dir}/figure/$outdir", overwrite:true, mode:'copy'
+  output:
+   file("${out}.svg")
+   file("${out}.pdf" )  into locuszoom_type
+  script :
+     //filetmp=filegwas.baseName.toString()
+     //outdir=filetmp.take(filetmp.toString().lastIndexOf('.'))
+     outdir=filegwas.baseName
+     rs=rs.replace('\n','')
+     poschro=poschro.replace(':','_')
+     out=outdir+'_'+poschro+'_'+info_file+"_"+typefile
+ """
+   ${params.loczm_bin} --epacts  $filegwas --delim tab --refsnp  $rs --flank ${params.around_rs} --pop ${params.loczm_pop} --build ${params.loczm_build} --source ${params.loczm_source} $loczm_gwascat --svg  -p out --no-date
+  mv */*.svg $out".svg"
+  mv */*.pdf $out".pdf"
+ """
+}
+locuszoom_col=locuszoom_type.collect()
+
+process DoReport{
+  input :
+    file(locuszoom) from locuszoom_col     
+    file(csv) from resumcsv
+  output :
+    set file(outpdf), file(outex)
+  script :
+   lzm=locuszoom.join(',')
+   outpdf="${params.output}.pdf"
+   outtex="${params.output}.tex"
+   """
+   launch_doreport.r --list_pdf $lzm --csv_res $csv
+   """
+}

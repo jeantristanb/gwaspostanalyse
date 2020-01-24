@@ -47,7 +47,7 @@
 \date{\today}
 \author{Nextflow \thanks{SBIMB}, SBMIB}
 \begin{document}
-
+\maketitle
 
 
 <<charge_function,  comment=NA, results = 'hide', echo=FALSE >>=
