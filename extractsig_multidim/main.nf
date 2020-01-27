@@ -275,5 +275,7 @@ process DoReport{
    outtex="${params.output}.tex"
    """
    launch_doreport.r --list_pdf $lzm --csv_res $csv
+   mv do_report.pdf $outpdf
+   mv do_report.tex $outtex
    """
 }
