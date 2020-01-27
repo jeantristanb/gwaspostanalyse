@@ -9,6 +9,8 @@
 \usepackage{times}
 \usepackage{hyperref}
 % position in figure => [H] => figure/table positioning in the place write
+\usepackage{subcaption}
+\expandafter\def\csname ver@subfig.sty\endcsname{}
 \usepackage{float}
 %option booktabs=T, dans kable
 \usepackage{booktabs}
@@ -48,6 +50,37 @@
 \begin{document}
 \maketitle
 \begin{landscape}
+<<function,comment=NA,echo=FALSE >>=
+FigureInTabOld<-function(infocol,listfig, title,nbcol=1){
+Figure<-function(figname,scale, title='')paste('\\includegraphics[scale=',scale,']{', figname,'}',sep='')
+infocol=gsub('_',' ', infocol)
+scale=0.7/nbcol-0.05
+coltype<-paste(rep("|p{0.05\\textwidth}|c|",nbcol),collapse='')
+headtable<-c('\\begin{table}[H]',paste('\\caption{',title,'}',sep=''),paste('\\centering\n\\begin{tabular}{',coltype,'}\n',sep=''))
+headtable<-c(headtable,paste(apply(matrix(paste(infocol,Figure(listfig, scale),sep='&'),ncol=nbcol),2, function(x)paste(x, collapse='&')),'\\\\ \n',sep=''))
+headtable<-c(headtable,'\\end{tabular}\n',paste('\\label{tab:',title,'}','\n\\end{table}',sep=''))
+headtable
+}
+FigureInTab<-function(infocol,listfig, title,nbcol=1){
+Figure<-function(figname,scale, title='')paste('\\begin{subfigure}{0.4\\textwidth}\\centering\\includegraphics[scale=',scale,']{', figname,'}\\caption{',title,'}\\label{fig:',figname,'}\\end{subfigure}',sep='')
+infocol=gsub('_',' ', infocol)
+scale=0.8/nbcol-0.05
+coltype<-paste(rep("|c|",nbcol),collapse='')
+headtable<-c('\\begin{table}[H]',paste('\\caption{',title,'}',sep=''),paste('\\centering\n\\begin{tabular}{',coltype,'}\n',sep=''))
+tmpfig=Figure(listfig ,scale, infocol)
+headtable<-c(headtable,apply(matrix(tmpfig, ncol=nbcol, byrow=T),1,function(x)paste(x,collapse='&\n')),'\\\\\n\\newline\n')
+headtable<-c(headtable,'\\end{tabular}\n',paste('\\label{tab:',title,'}','\n\\end{table}',sep=''))
+headtable
+
+#\begin{subfigure}{0.4\textwidth}\centering\includegraphics[width=0.3\columnwidth]{example-image-a}\caption{Figure A}\label{fig:taba}\end{subfigure}&
+#\begin{subfigure}{0.4\textwidth}\centering\includegraphics[width=0.3\columnwidth]{example-image-b}\caption{Figure B}\label{fig:tabb}\end{subfigure}\\
+#\newline
+#\begin{subfigure}{0.4\textwidth}\centering\includegraphics[width=0.3\columnwidth]{example-image-c}\caption{Figure C}\label{fig:tabc}\end{subfigure}&
+#\begin{subfigure}{0.4\textwidth}\centering\includegraphics[width=0.3\columnwidth]{example-image-a}\caption{Figure A again}\label{fig:taba2}\end{subfigure}\\
+}
+
+
+@
 <<dotable,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "QQplot of pvalue of gwas result found in gwas catalog",fig.pos="H", fig.width=4, fig.height=4>>=
 NameCSV=headCSV
 
@@ -74,6 +107,21 @@ kable(DataCSV,"latex",caption=paste("significant pvalue"), digits=3, row.names=F
 
 \section{Locus Zoom}
 <<plotwindbonf,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "QQplot of pvalue of gwas result found in gwas catalog",fig.pos="H", fig.width=4, fig.height=4>>=
+#names(PdfMat)<-c('Chro', 'Pos', 'Info','Type', 'path')
+#FigureInTab<-function(infocol,listfig, title,nbcol=1){
+#kable(PdfMat, 'latex')
+NbPdfByPage=2
+Latex=c()
+for(Chro in unique(PdfMat[,'Chro'])){
+PdfMatChro<-PdfMat[PdfMat[,'Chro']==Chro ,]
+Latex<-c(Latex,paste('\\subsection{ Chro : ',Chro,'}'))
+for(Pos in unique(PdfMatChro[,'Pos'])){
+Latex<-c(Latex,paste('\\subsection{ Chro:Pos :',Chro,':',Pos,'}',sep=''))
+listinfo=c(paste(PdfMatChro[PdfMatChro[,'Pos']==Pos,'Info'], PdfMatChro[PdfMatChro[,'Pos']==Pos,'Type'], sep=':'))
+Latex<-c(Latex ,FigureInTab(listinfo,PdfMatChro[PdfMatChro[,'Pos']==Pos,'path'], paste(Chro, Pos),nbcol=2))
+}
+}
+cat(paste(Latex, collapse='\n'))
 
 #NbWind=1
 #GetBeginTab<-function(Nb)paste("\\begin{table}[ht]\n\\caption{ result for bonferroni correction table : ",Nb,"}\n\\centering\n\\begin{tabular}{cc}",sep="")
