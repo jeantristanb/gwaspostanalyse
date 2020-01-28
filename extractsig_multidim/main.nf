@@ -131,7 +131,7 @@ def configfile_analysis(file){
             if(SplH[cmtelem].toUpperCase()=='TYPE'){
                TypeFile.add(splLine[cmtelem])
             }
-            if(splLine[cmtelem]!='NA' && splLine[cmtelem]!='' && SplH[cmtelem]!='FILE' && SplH[cmtelem]!='INFO'){
+            if(splLine[cmtelem]!='NA' && splLine[cmtelem].toUpperCase()!='' && SplH[cmtelem].toUpperCase()!='FILE'){
                  SubRes.add(SplH[cmtelem].toUpperCase()+':'+splLine[cmtelem])
             }
             cmtelem+=1
@@ -155,7 +155,7 @@ process ExtractRsSig{
     script :
        filers=file_assoc+".rs"
        """
-       extract_rssig.py  --input_file $file_assoc --out_file $filers --info_file $head_file --threshold ${params.pval_thresh}
+       extract_rssig.py  --input_file $file_assoc --out_file $filers --info_file \"$head_file\" --threshold ${params.pval_thresh}
        """
 }
 
@@ -183,7 +183,7 @@ process ExtractInfoSig{
        script:
         fileout=file_assoc+".sub_file"
         """
-        extract_possig.py  --input_file $file_assoc --out_file $fileout --head_info $head_file --info_file $allrs
+        extract_possig.py  --input_file $file_assoc --out_file $fileout --head_info \"$head_file\" --info_file $allrs
         """
 }
 asso_sig_col=listres_sig.collect()
@@ -209,7 +209,8 @@ process DefineLocusZoom{
        stdout into listvalposchro
    script :
       """
-      cat $allrs |awk '{print \$1\":\"\$2}'
+      #cat $allrs |awk '{print \$1\":\"\$2}'
+      define_poslocuszoom.py --file_rs $allrs --around ${params.around_rs}
       """ 
 }
 poschro_ch = Channel.create()
@@ -228,7 +229,7 @@ process FormatForLocusZoom{
      script :
      fileout="formatforgwascat.out"
      """
-     extract_position_forgwascat.py --input_file $file_assoc --out_file $fileout --head_info $head_file --chropos $poschro --around_rs ${params.around_rs}
+     extract_position_forlocuszoom.py --input_file $file_assoc --out_file $fileout --head_info \"$head_file\" --chropos $poschro --around_rs ${params.around_rs}
      """
 }
 
@@ -262,19 +263,22 @@ process PlotLocusZoom{
  """
 }
 locuszoom_col=locuszoom_type.collect()
-
 process DoReport{
   input :
     file(locuszoom) from locuszoom_col     
     file(csv) from resumcsv
+  publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
   output :
-    set file(outpdf), file(outex)
+    set file("$outpdf"), file("$outtex")
   script :
-   lzm=locuszoom.join(',')
+   lzm=locuszoom.join('\n')
+   tmpfile=params.work_dir+'/.tempfile'
+   File writ = new File("${params.work_dir}/.tempfile")
+   writ.write(lzm)
    outpdf="${params.output}.pdf"
    outtex="${params.output}.tex"
    """
-   launch_doreport.r --list_pdf $lzm --csv_res $csv
+   launch_doreport.r --list_pdf $tmpfile --csv_res $csv
    mv do_report.pdf $outpdf
    mv do_report.tex $outtex
    """

@@ -1,4 +1,5 @@
 #!/usr/bin/Rscript
+library(plyr)
 args = commandArgs(trailingOnly=TRUE)
 if(length(args)!=2){
 print('argument number false for mergefile')
@@ -9,6 +10,7 @@ q(2)
 listfile=strsplit(args[1], split=',')[[1]]
 CmtRs<-1
 Cmt<-1
+listres=list()
 for(File in listfile){
 DataI<-read.table(File, header=T, sep='\t')
 Head=strsplit(readLines(File, 1),split='\t')[[1]]
@@ -21,8 +23,16 @@ CmtRs<-CmtRs+1
 }else{
 Data<-DataI
 }
-if(Cmt==1)DataF<-Data
-else DataF<-merge(DataF,Data, by=c('Type','chr','bp'),all=T)
+Type=as.character(unique(Data$Type))
+if(!(Type %in% names(listres)))listres[[Type]]=Data
+else listres[[Type]]=merge(listres[[Type]] ,Data, by=c('Type','chr','bp'),all=T)
+Cmt<-Cmt+1
+}
+print(names(listres))
+Cmt<-1
+for(Type in names(listres)){
+if(Cmt==1)DataF<-listres[[Type]]
+else DataF<-rbind.fill(DataF, listres[[Type]])
 Cmt<-Cmt+1
 }
 if(CmtRs>1){

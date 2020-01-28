@@ -41,7 +41,7 @@ def parseArguments():
 #rsID,Chro,Pos,A1,A2,Beta,Se,Pval,N,freqA1,direction,Imputed,Sep,File,IsRefFile
 args=parseArguments()
 infohead=args.head_info.split(",")
-l_infohead=[x.split(":")[0] for x in infohead]
+l_infohead=[x.split(":")[0].upper() for x in infohead]
 l_filehead=[x.split(":")[1] for x in infohead]
 
 
@@ -66,7 +66,6 @@ if 'RSID' in l_infohead:
    namersid=l_filehead[l_infohead.index('RSID')]
 else :
    namersid='NA'
-#rsID,Chro,Pos,A1,A2,Beta,Se,Pval,N,freqA1,direction,Imputed,Sep,File,Info,Type
 
 if 'INFO' in l_infohead :
    nameInfo=l_filehead[l_infohead.index('INFO')]
@@ -97,7 +96,7 @@ PosPos=Header.index(namepos)
 
 PosToSave=[PosChro, PosPos]
 NewHeader=[]
-if nameInfo!='NA' :
+if nameType!='NA' :
    NewHeader.append('Type')
 NewHeader+=['chr', 'bp']
 if namersid!='NA':
@@ -112,6 +111,14 @@ for x in HeadToSave1 :
            PosToSave.append(Header.index(nametmp))
            NewHeader.append(HeadToSave[CmtHead]+' ('+nameInfo+')')
    CmtHead+=1
+
+if 'OTHER' in l_infohead :
+   allnameType=l_filehead[l_infohead.index('OTHER')]
+   if allnameType.upper()!='NA':
+      allnameType=allnameType.split(';')
+      for x in allnameType :
+        PosToSave.append(Header.index(x))
+        NewHeader.append(x)
 
 
 WriteRes=open(args.out_file, 'w')

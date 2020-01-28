@@ -42,7 +42,8 @@ fileknit=paste(path,filekniti,sep="/")
 fileknit=filekniti
 }
 DirPWD=getwd()
-listpdf=strsplit(opt[['list_pdf']],split=',')[[1]]
+#listpdf=strsplit(opt[['list_pdf']],split=',')[[1]]
+listpdf=readLines(opt[['list_pdf']])
 PdfMat=cbind(matrix(unlist(strsplit(gsub('.pdf$','',listpdf), split='_')),nrow=length(listpdf),byrow=T),data.frame(FileName=paste(DirPWD,'/',listpdf,sep='')))
 PdfMat<-PdfMat[,-1]
 names(PdfMat)<-c('Chro', 'Pos', 'Info','Type', 'path')

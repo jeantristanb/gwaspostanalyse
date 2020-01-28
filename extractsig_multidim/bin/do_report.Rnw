@@ -62,9 +62,9 @@ headtable<-c(headtable,'\\end{tabular}\n',paste('\\label{tab:',title,'}','\n\\en
 headtable
 }
 FigureInTab<-function(infocol,listfig, title,nbcol=1){
-Figure<-function(figname,scale, title='')paste('\\begin{subfigure}{0.4\\textwidth}\\centering\\includegraphics[scale=',scale,']{', figname,'}\\caption{',title,'}\\label{fig:',figname,'}\\end{subfigure}',sep='')
+Figure<-function(figname,scale, title='')paste('\\begin{subfigure}{',scale+0.05,'\\textwidth}\\centering\\includegraphics[width=',scale*20,'cm]{', figname,'}\\caption{',title,'}\\label{fig:',figname,'}\\end{subfigure}',sep='')
 infocol=gsub('_',' ', infocol)
-scale=0.8/nbcol-0.05
+scale=1/nbcol-0.05
 coltype<-paste(rep("|c|",nbcol),collapse='')
 headtable<-c('\\begin{table}[H]',paste('\\caption{',title,'}',sep=''),paste('\\centering\n\\begin{tabular}{',coltype,'}\n',sep=''))
 tmpfig=Figure(listfig ,scale, infocol)
