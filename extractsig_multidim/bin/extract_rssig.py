@@ -26,10 +26,20 @@ def parseArguments():
     parser.add_argument('--input_file',type=str,help="input file",required=True)
     parser.add_argument('--out_file',type=str,help="output file",required=True)
     parser.add_argument("--info_file", help="", type=str,required=True)
+    parser.add_argument("--cut_maf", help="", type=float, default=0.0)
     parser.add_argument("--threshold", type=float,help="threshold to extract rs")
     args = parser.parse_args()
     return args
 
+def CheckFreqNull(x) :
+   return True 
+
+def CheckFreq(x) :
+   fltfreq=float(x[PosFreq])
+   if fltfreq>=cut_maf_min and fltfreq<=cut_maf_max :
+     return True
+   else :
+     return False
 #rsID,Chro,Pos,A1,A2,Beta,Se,Pval,N,freqA1,direction,Imputed,Sep,File,IsRefFile
 args=parseArguments()
 infohead=args.info_file.split(",")
@@ -53,6 +63,11 @@ if 'POS' in l_infohead :
 else :
    nompos='NA'
 
+if 'FREQA1' in l_infohead :
+   nomfreq=l_filehead[l_infohead.index('FREQA1')]
+else :
+   nomfreq='NA'
+     
 
 if 'PVAL' in l_infohead :
     nompval=l_filehead[l_infohead.index('PVAL')]
@@ -69,6 +84,15 @@ if nomchro not in Header or nompos not in Header or nompval not in Header :
 PosChro=Header.index(nomchro)
 PosPos=Header.index(nompos)
 PosPval=Header.index(nompval)
+if args.cut_maf>0 and nomfreq!='NA' :
+   PosFreq=Header.index(nomfreq)
+   FreqFctCheck=CheckFreq
+   cut_maf_min=args.cut_maf
+   cut_maf_max=1-args.cut_maf
+else :
+   FreqFctCheck=CheckFreqNull
+   
+ 
 WriteRes=open(args.out_file, 'w')
 
 for line in ReadFile :
@@ -76,5 +100,5 @@ for line in ReadFile :
      StrPval=Spl[PosPval]
      if StrPval!='NA' and StrPval!='Na' and StrPval!='na' and StrPval!='nan':
        FloatPval=float(Spl[PosPval])
-       if FloatPval <= threshold : 
+       if FloatPval <= threshold and FreqFctCheck(Spl): 
           WriteRes.write(Spl[PosChro]+'\t'+Spl[PosPos]+'\n') 

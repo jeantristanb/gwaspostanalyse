@@ -50,7 +50,7 @@ params.work_dir   = "$PWD"
 params.input_listfiles = "${params.work_dir}/list_files.input"
 params.output_dir = "${params.work_dir}/output"
 params.output = "replication"
-params.cut_maf = 0.01
+params.cut_maf = 0.00
 
 
 params.mem_req="8G"
@@ -152,10 +152,11 @@ process ExtractRsSig{
       set file(file_assoc), val(head_file) from liste_filesi_ch
     output :
       file(filers) into (listrs_sig)
+
     script :
        filers=file_assoc+".rs"
        """
-       extract_rssig.py  --input_file $file_assoc --out_file $filers --info_file \"$head_file\" --threshold ${params.pval_thresh}
+       extract_rssig.py  --input_file $file_assoc --out_file $filers --info_file \"$head_file\" --threshold ${params.pval_thresh} --cut_maf  ${params.cut_maf}
        """
 }
 

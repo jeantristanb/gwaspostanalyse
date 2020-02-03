@@ -52,31 +52,42 @@
 \begin{landscape}
 <<function,comment=NA,echo=FALSE >>=
 FigureInTabOld<-function(infocol,listfig, title,nbcol=1){
-Figure<-function(figname,scale, title='')paste('\\includegraphics[scale=',scale,']{', figname,'}',sep='')
+Figure<-function(figname,scale, title=''){
+fignameNew<-paste('\\includegraphics[scale=',scale,']{', figname,'}',sep='')
+fignameNew[is.na(figname)]<-""
+fignameNew
+}
 infocol=gsub('_',' ', infocol)
 scale=0.7/nbcol-0.05
-coltype<-paste(rep("|p{0.05\\textwidth}|c|",nbcol),collapse='')
-headtable<-c('\\begin{table}[H]',paste('\\caption{',title,'}',sep=''),paste('\\centering\n\\begin{tabular}{',coltype,'}\n',sep=''))
+coltype<-paste(rep("|p{0.05\\textwidth}|p|",nbcol),collapse='')
+headtable<-c('\\begin{longtable}[H]',paste('\\caption{',title,'} \\\\ \n \\hline',sep=''),paste('\\centering\n\\begin{tabular}{',coltype,'}\n',sep=''))
+if(length(listfig)%%2==1)listfig=c(listfig,NA)
 headtable<-c(headtable,paste(apply(matrix(paste(infocol,Figure(listfig, scale),sep='&'),ncol=nbcol),2, function(x)paste(x, collapse='&')),'\\\\ \n',sep=''))
-headtable<-c(headtable,'\\end{tabular}\n',paste('\\label{tab:',title,'}','\n\\end{table}',sep=''))
+headtable<-c(headtable,'\\end{tabular}\n',paste('\\label{tab:',title,'}','\n\\end{longtable}',sep=''))
 headtable
 }
-FigureInTab<-function(infocol,listfig, title,nbcol=1){
-Figure<-function(figname,scale, title='')paste('\\begin{subfigure}{',scale+0.05,'\\textwidth}\\centering\\includegraphics[width=',scale*20,'cm]{', figname,'}\\caption{',title,'}\\label{fig:',figname,'}\\end{subfigure}',sep='')
+FigureInTab<-function(infocol,listfig, title,nbcol=1, nbrow=2){
+Figure<-function(figname,scale, title=''){
+fignameNew<-paste('\\begin{subfigure}{',scale+0.05,'\\textwidth}\\centering\\includegraphics[width=',scale*20,'cm]{', figname,'}\\caption{',title,'}\\label{fig:',title,'}\\end{subfigure}',sep='')
+fignameNew[is.na(figname)]<-""
+fignameNew
+}
 infocol=gsub('_',' ', infocol)
 scale=1/nbcol-0.05
 coltype<-paste(rep("|c|",nbcol),collapse='')
-headtable<-c('\\begin{table}[H]',paste('\\caption{',title,'}',sep=''),paste('\\centering\n\\begin{tabular}{',coltype,'}\n',sep=''))
+headtable=c()
+if(length(listfig)%%nbcol!=0)listfig=c(as.character(listfig),NA)
 tmpfig=Figure(listfig ,scale, infocol)
-headtable<-c(headtable,apply(matrix(tmpfig, ncol=nbcol, byrow=T),1,function(x)paste(x,collapse='&\n')),'\\\\\n\\newline\n')
+MatFig<-matrix(tmpfig, ncol=nbcol, byrow=T)
+for(Cmt in seq(1,nrow(MatFig),nbrow)){
+headtable<-c(headtable,'\\begin{table}[H]',paste('\\caption{',title,'}',sep=''),paste('\\centering\n\\begin{tabular}{',coltype,'}\n',sep=''))
+SubMat<-MatFig[Cmt:min(nrow(MatFig),(Cmt+nbrow-1)),]
+if(!is.matrix(SubMat))SubMat<-matrix(SubMat ,byrow=T, ncol=nbcol)
+headtable<-c(headtable,paste(apply(SubMat,1,function(x)paste(x,collapse='&\n')), "\\\\ \\hline"),'\\\\\n\\newline\n')
 headtable<-c(headtable,'\\end{tabular}\n',paste('\\label{tab:',title,'}','\n\\end{table}',sep=''))
+}
 headtable
 
-#\begin{subfigure}{0.4\textwidth}\centering\includegraphics[width=0.3\columnwidth]{example-image-a}\caption{Figure A}\label{fig:taba}\end{subfigure}&
-#\begin{subfigure}{0.4\textwidth}\centering\includegraphics[width=0.3\columnwidth]{example-image-b}\caption{Figure B}\label{fig:tabb}\end{subfigure}\\
-#\newline
-#\begin{subfigure}{0.4\textwidth}\centering\includegraphics[width=0.3\columnwidth]{example-image-c}\caption{Figure C}\label{fig:tabc}\end{subfigure}&
-#\begin{subfigure}{0.4\textwidth}\centering\includegraphics[width=0.3\columnwidth]{example-image-a}\caption{Figure A again}\label{fig:taba2}\end{subfigure}\\
 }
 
 
