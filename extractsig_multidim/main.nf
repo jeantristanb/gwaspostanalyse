@@ -247,6 +247,7 @@ process PlotLocusZoom{
   input :
     set val(rs), val(poschro),file(filegwas), val(info_file), val(typefile) from chforgwascat_F
   publishDir "${params.output_dir}/figure/$outdir", overwrite:true, mode:'copy'
+     errorStrategy 'ignore'
   output:
    file("${out}.svg")
    file("${out}.pdf" )  into locuszoom_type

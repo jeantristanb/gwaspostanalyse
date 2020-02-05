@@ -36,7 +36,7 @@ else DataF<-rbind.fill(DataF, listres[[Type]])
 Cmt<-Cmt+1
 }
 if(CmtRs>1){
-DataRsF<-cbind(DataRs[,c(1,2)],rsid=apply(DataRs[,-c(1,2)],1, function(x){x<-x[!is.na(x)];paste(gsub(' ','',unique(x)),collapse=',')}))
+DataRsF<-cbind(DataRs[,c(1,2)],rsid=apply(DataRs[,-c(1,2)],1, function(x){x<-x[!is.na(x)];paste(gsub(' ','',unique(x)),collapse=';')}))
 DataF2<-merge(DataRsF,DataF,  by=c('chr','bp'),all=T)
 head(DataF2)
 DataF2<-DataF2[,c('Type', 'rsid', 'chr','bp',names(DataF2)[!(names(DataF2) %in% c('Type', 'rsid', 'chr','bp'))])]
