@@ -156,7 +156,7 @@ process ExtractRsSig{
     script :
        filers=file_assoc+".rs"
        """
-       extract_rssig.py  --input_file $file_assoc --out_file $filers --info_file \"$head_file\" --threshold ${params.pval_thresh} --cut_maf  ${params.cut_maf}
+       extract_rssigv2.py  --input_file $file_assoc --out_file $filers --info_file \"$head_file\" --threshold ${params.pval_thresh} --cut_maf  ${params.cut_maf}
        """
 }
 
@@ -168,13 +168,25 @@ process MergeSigRs{
    output :
       file(allrs) into (allrs_sig,allrs_sig_plot)
    script :
-      allrs='allrs.rs'
+      allrstmp='tmpallrs.rs'
+      allrstmpsig='tmpallrs_sig.rs'
       allfilersjoin=allfilers.join(" ")
       """
       cat $allfilersjoin|sort|uniq > $allrs
       """
 }
 
+process DefineWind{
+   input :
+       file(allrs) from allrs_sig_plot
+   output:
+       stdout into listvalposchro
+       file('rs_infowind') into rs_infowind
+   script :
+      """
+      define_windsig.py --file_rs $allrs --around ${params.around_rs} --out rs_infowind
+      """
+}
 liste_filesi_ch_2=Channel.fromPath(info_file[0]).merge(Channel.from(info_file[1])).merge(Channel.from(info_file[2])).combine(allrs_sig)
 process ExtractInfoSig{
        input :
@@ -269,6 +281,7 @@ process DoReport{
   input :
     file(locuszoom) from locuszoom_col     
     file(csv) from resumcsv
+    file(rswind) from rs_infowind
   publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
   output :
     set file("$outpdf"), file("$outtex")
@@ -280,7 +293,7 @@ process DoReport{
    outpdf="${params.output}.pdf"
    outtex="${params.output}.tex"
    """
-   launch_doreport.r --list_pdf $tmpfile --csv_res $csv
+   launch_doreport.r --list_pdf $tmpfile --csv_res $csv --rs_info $rswind
    mv do_report.pdf $outpdf
    mv do_report.tex $outtex
    """
