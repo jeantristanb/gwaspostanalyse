@@ -57,11 +57,10 @@ params.mem_req="8G"
 params.big_time="100H"
 
 params.data = ""
-params.around_rs=100000
+params.around_rs=250000
 
 
 params.max_pval_rep=10**-6
-params.size_win_kb=25
 params.nb_cpu = 3
 
 params.gwas_cat="/dataE/AWIGenGWAS/shared/ResultGWAS/Ressource/GWAS_Catalog_V37.tsv"
@@ -168,8 +167,7 @@ process MergeSigRs{
    output :
       file(allrs) into (allrs_sig,allrs_sig_plot)
    script :
-      allrstmp='tmpallrs.rs'
-      allrstmpsig='tmpallrs_sig.rs'
+      allrs='allrs.rs'
       allfilersjoin=allfilers.join(" ")
       """
       cat $allfilersjoin|sort|uniq > $allrs
@@ -215,17 +213,6 @@ process MergeInfoSig{
          """ 
 }
 
-process DefineLocusZoom{
-   input :
-       file(allrs) from allrs_sig_plot
-   output:
-       stdout into listvalposchro
-   script :
-      """
-      #cat $allrs |awk '{print \$1\":\"\$2}'
-      define_poslocuszoom.py --file_rs $allrs --around ${params.around_rs}
-      """ 
-}
 poschro_ch = Channel.create()
 check = Channel.create()
 listvalposchro.flatMap { list_str -> list_str.split() }.tap ( check) .set { poschro_ch}

@@ -68,8 +68,8 @@ if 'FREQA1' in l_infohead :
 else :
    nomfreq='NA'
 
-if 'RefSig' in l_infohead :
-   RefSig=l_filehead[l_infohead.index('RefSig')]
+if 'REFSIG' in l_infohead :
+   RefSig=l_filehead[l_infohead.index('REFSIG')]
 else :
    RefSig='1'
 

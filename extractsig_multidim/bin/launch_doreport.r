@@ -19,6 +19,8 @@ y
 option_list = list(
   make_option("--list_pdf", type="character",
               help="file gwas contains resultat ", metavar="character"),
+  make_option("--rs_info", type="character",
+              help="file gwas contains resultat ", metavar="character"),
   make_option("--csv_res", type="character",
               help="file gwas contains resultat ", metavar="character")
 )
@@ -48,7 +50,10 @@ PdfMat=cbind(matrix(unlist(strsplit(gsub('.pdf$','',listpdf), split='_')),nrow=l
 PdfMat<-PdfMat[,-1]
 names(PdfMat)<-c('Chro', 'Pos', 'Info','Type', 'path')
 print(PdfMat)
-DataCSV<-read.csv(opt[['csv_res']])
+DataCSVI<-read.csv(opt[['csv_res']])
+infors=read.table(opt[['rs_info']] ,header=F)
+DataCSV<-merge(DataCSVI, infors, by.x=c('chr','bp'), by.y=c("V1","V2"))
+
 headCSV<-strsplit(readLines(opt[['csv_res']], 1),split=',')[[1]]
 knit(fileknit)
 system('pdflatex do_report')
