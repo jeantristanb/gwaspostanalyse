@@ -271,7 +271,7 @@ process DoReport{
     file(rswind) from rs_infowind
   publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
   output :
-    set file("$outpdf"), file("$outtex")
+    set file("$outpdf"), file("$outtex"), file('csv_out')
   script :
    lzm=locuszoom.join('\n')
    tmpfile=params.work_dir+'/.tempfile'
@@ -279,8 +279,9 @@ process DoReport{
    writ.write(lzm)
    outpdf="${params.output}.pdf"
    outtex="${params.output}.tex"
+   outcsv="${params.output}_sort.csv"
    """
-   launch_doreport.r --list_pdf $tmpfile --csv_res $csv --rs_info $rswind
+   launch_doreport.r --list_pdf $tmpfile --csv_res $csv --rs_info $rswind --csv_out  $outcsv
    mv do_report.pdf $outpdf
    mv do_report.tex $outtex
    """

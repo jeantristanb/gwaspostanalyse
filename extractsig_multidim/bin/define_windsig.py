@@ -65,7 +65,7 @@ for chro in dicl.keys() :
       print(chro+":"+str(key))
       minpos=min(dicl[chro][key])
       maxpos=max(dicl[chro][key])
-      Write.write("\n".join([chro+'\t'+str(x)+'\t'+minpos+'\t'+maxpos for x in dicchro[key]])+'\n')
+      Write.write("\n".join([chro+'\t'+str(x)+'\t'+str(minpos)+'\t'+str(maxpos) for x in dicchro[key]])+'\n')
       listkey=list(dicl[chro][key])
       for x in listkey :
          if x in  dicl[chro] :

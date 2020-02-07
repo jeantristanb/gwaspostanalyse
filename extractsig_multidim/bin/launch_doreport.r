@@ -22,6 +22,8 @@ option_list = list(
   make_option("--rs_info", type="character",
               help="file gwas contains resultat ", metavar="character"),
   make_option("--csv_res", type="character",
+              help="file gwas contains resultat ", metavar="character"),
+  make_option("--csv_out", type="character",
               help="file gwas contains resultat ", metavar="character")
 )
 
@@ -53,8 +55,12 @@ print(PdfMat)
 DataCSVI<-read.csv(opt[['csv_res']])
 infors=read.table(opt[['rs_info']] ,header=F)
 DataCSV<-merge(DataCSVI, infors, by.x=c('chr','bp'), by.y=c("V1","V2"))
+DataCSV<-DataCSV[,c(names(DataCSVI),"V3","V4")]
 
-headCSV<-strsplit(readLines(opt[['csv_res']], 1),split=',')[[1]]
+headCSV<-c(strsplit(readLines(opt[['csv_res']], 1),split=',')[[1]],"begin windows", "end windows")
+DataCSVPrint<-DataCSV
+names(DataCSVPrint)<-headCSV
+write.csv(DataCSVPrint,row.names=F, file=opt[['csv_out']])
 knit(fileknit)
 system('pdflatex do_report')
 system('pdflatex do_report')
