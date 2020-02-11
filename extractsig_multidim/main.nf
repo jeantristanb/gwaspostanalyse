@@ -20,7 +20,7 @@ import java.nio.file.Paths
 
 
 def helps = [ 'help' : 'help' ]
-allowed_params = ["cut_maf", "output_dir", "pb_around_rs", "mem_req", "work_dir","mem_req","big_time", "output","nb_cpu" , "input_dir","input_pat", "file_gwas", "pval_thresh"]
+allowed_params = ["cut_maf", "output_dir", "pb_around_rs", "mem_req", "work_dir","mem_req","big_time", "output","nb_cpu" , "input_dir","input_pat", "file_gwas", "pval_thresh", "plot_locuszoom"]
 //allowed_params_blocks = ["haploblocks", "plkref_haploblocks", "plk_othopt_haploblocks", 'pval_thresh', "around_rs"]
 allowed_params_other=["max_forks", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key","region", "AMI","maxInstances","instance-type", "instanceType", "bootStorageSize", "boot-storage-size", "max-instances", "sharedStorageMount", "shared-storage-mount", "scripts"]
 allowed_params_headinfo=["head_chr_gwascat", "head_bp_gwascat", 'gwas_cat']
@@ -91,6 +91,7 @@ params.loczm_pop = "AFR"
 params.loczm_build = "hg19"
 params.loczm_source ="1000G_March2012"
 params.loczm_gwascat = ""
+params.plot_locuszoom = 1
 
 
  
@@ -221,15 +222,17 @@ poschro_chF=Channel.fromPath(info_file[0]).merge(Channel.from(info_file[1])).mer
 
 
 
+if(params.plot_locuszoom==1){
 process FormatForLocusZoom{
     input :
       set file(file_assoc), val(head_file), val(info_file), val(typefile),val(poschro) from poschro_chF
     output :
-      set stdout, val(poschro),file(fileout), val(info_file), val(typefile) into chforgwascat
+      set file(filenamers), val(poschro),file(fileout), val(info_file), val(typefile) into chforgwascat
      script :
      fileout="formatforgwascat.out"
+     filenamers="tmp.rs"
      """
-     extract_position_forlocuszoom.py --input_file $file_assoc --out_file $fileout --head_info \"$head_file\" --chropos $poschro --around_rs ${params.around_rs}
+     extract_position_forlocuszoom.py --input_file $file_assoc --out_file $fileout --head_info \"$head_file\" --chropos $poschro --around_rs ${params.around_rs} &> $filenamers
      """
 }
 
@@ -244,7 +247,7 @@ loczm_gwascat=""
 
 process PlotLocusZoom{
   input :
-    set val(rs), val(poschro),file(filegwas), val(info_file), val(typefile) from chforgwascat_F
+    set file(filers), val(poschro),file(filegwas), val(info_file), val(typefile) from chforgwascat_F
   publishDir "${params.output_dir}/figure/$outdir", overwrite:true, mode:'copy'
      errorStrategy 'ignore'
   output:
@@ -253,17 +256,22 @@ process PlotLocusZoom{
   script :
      //filetmp=filegwas.baseName.toString()
      //outdir=filetmp.take(filetmp.toString().lastIndexOf('.'))
+     //rs=filers.readLines()[0]
      outdir=filegwas.baseName
-     rs=rs.replace('\n','')
+     //rs=rs.replace('\n','')
      poschro=poschro.replace(':','_')
      out=outdir+'_'+poschro+'_'+info_file+"_"+typefile
  """
-   ${params.loczm_bin} --epacts  $filegwas --delim tab --refsnp  $rs --flank ${params.around_rs} --pop ${params.loczm_pop} --build ${params.loczm_build} --source ${params.loczm_source} $loczm_gwascat --svg  -p out --no-date
+   rs=`head -1 $filers|awk '{print \$1}'`
+   ${params.loczm_bin} --epacts  $filegwas --delim tab --refsnp  \$rs --flank ${params.around_rs} --pop ${params.loczm_pop} --build ${params.loczm_build} --source ${params.loczm_source} $loczm_gwascat --svg  -p out --no-date
   mv */*.svg $out".svg"
   mv */*.pdf $out".pdf"
  """
 }
 locuszoom_col=locuszoom_type.collect()
+}else{
+locuszoom_col=file('FILE_NO')
+}
 process DoReport{
   input :
     file(locuszoom) from locuszoom_col     
@@ -271,15 +279,15 @@ process DoReport{
     file(rswind) from rs_infowind
   publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
   output :
-    set file("$outpdf"), file("$outtex"), file('csv_out')
+    set file("$outpdf"), file("$outtex"), file("$outcsv")
   script :
-   lzm=locuszoom.join('\n')
+   lzm=params.plot_locuszoom==1 ? locuszoom.join('\n') : ""
    tmpfile=params.work_dir+'/.tempfile'
    File writ = new File("${params.work_dir}/.tempfile")
    writ.write(lzm)
    outpdf="${params.output}.pdf"
    outtex="${params.output}.tex"
-   outcsv="${params.output}_sort.csv"
+   outcsv="${params.output}_short.csv"
    """
    launch_doreport.r --list_pdf $tmpfile --csv_res $csv --rs_info $rswind --csv_out  $outcsv
    mv do_report.pdf $outpdf

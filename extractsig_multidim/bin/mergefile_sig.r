@@ -13,6 +13,7 @@ Cmt<-1
 listres=list()
 for(File in listfile){
 DataI<-read.table(File, header=T, sep='\t')
+if(nrow(DataI)>0){
 Head=strsplit(readLines(File, 1),split='\t')[[1]]
 names(DataI)<-Head
 if('rsid' %in% names(DataI)){
@@ -27,6 +28,7 @@ Type=as.character(unique(Data$Type))
 if(!(Type %in% names(listres)))listres[[Type]]=Data
 else listres[[Type]]=merge(listres[[Type]] ,Data, by=c('Type','chr','bp'),all=T)
 Cmt<-Cmt+1
+}
 }
 print(names(listres))
 Cmt<-1

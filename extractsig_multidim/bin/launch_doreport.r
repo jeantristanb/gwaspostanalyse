@@ -48,16 +48,20 @@ fileknit=filekniti
 DirPWD=getwd()
 #listpdf=strsplit(opt[['list_pdf']],split=',')[[1]]
 listpdf=readLines(opt[['list_pdf']])
+if(length(listpdf)>0){
 PdfMat=cbind(matrix(unlist(strsplit(gsub('.pdf$','',listpdf), split='_')),nrow=length(listpdf),byrow=T),data.frame(FileName=paste(DirPWD,'/',listpdf,sep='')))
 PdfMat<-PdfMat[,-1]
 names(PdfMat)<-c('Chro', 'Pos', 'Info','Type', 'path')
-print(PdfMat)
+}else{
+PdfMat<-as.data.frame(matrix(nrow=0,ncol=5))
+names(PdfMat)<-c('Chro', 'Pos', 'Info','Type', 'path')
+}
 DataCSVI<-read.csv(opt[['csv_res']])
 infors=read.table(opt[['rs_info']] ,header=F)
 DataCSV<-merge(DataCSVI, infors, by.x=c('chr','bp'), by.y=c("V1","V2"))
-DataCSV<-DataCSV[,c(names(DataCSVI),"V3","V4")]
+DataCSV<-DataCSV[,c("V3","V4",names(DataCSVI))]
 
-headCSV<-c(strsplit(readLines(opt[['csv_res']], 1),split=',')[[1]],"begin windows", "end windows")
+headCSV<-c("begin windows", "end windows", strsplit(readLines(opt[['csv_res']], 1),split=',')[[1]])
 DataCSVPrint<-DataCSV
 names(DataCSVPrint)<-headCSV
 write.csv(DataCSVPrint,row.names=F, file=opt[['csv_out']])

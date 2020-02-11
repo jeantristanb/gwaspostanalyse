@@ -44,7 +44,7 @@
 
 \setlength{\parskip}{6pt}
 \setlength{\parindent}{0pt}
-\title{Report for transferability : analyse by position}
+\title{Analyse of comparison of gwas summary stat}
 \date{\today}
 \author{Nextflow \thanks{SBIMB}, SBMIB}
 \begin{document}

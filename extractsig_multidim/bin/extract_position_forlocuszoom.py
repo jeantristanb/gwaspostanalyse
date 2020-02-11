@@ -110,7 +110,7 @@ MinDistPos=1000000000
 RsToUse='NA'
 for line in ReadFile :
      Spl=line.split(sep)
-     PosLine=int(Spl[PosPos])
+     PosLine=int(float(Spl[PosPos]))
      if ChroCheck==Spl[PosChro] and PosLine>=PosMinCheck and PosLine<=PosMaxCheck:
           if namersid=='NA' :
             RSID=Chro+':'+str(PosLine)
