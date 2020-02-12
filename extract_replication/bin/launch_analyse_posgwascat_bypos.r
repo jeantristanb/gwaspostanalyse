@@ -38,9 +38,9 @@ option_list = list(
   make_option("--beta_gwascat", type="character",
               help="file gwas contains resultat ", metavar="character"),
   make_option("--print_gwascat", type="character",
-              help="file gwas contains resultat ", metavar="character"),
+              help="file gwas contains resultat ", metavar="character", default=NA),
   make_option("--pval_gwascat", type="character",
-              help="file gwas contains resultat ", metavar="character"),
+              help="file gwas contains resultat ", metavar="character", default=NA),
   make_option("--info_gene", type="character",
               help="file gwas contains resultat ", metavar="character"),
   make_option("--threshpval_gwascat", type="double",
@@ -68,6 +68,16 @@ ChroGC=opt[['chro_gwascat']]
 PosGC=opt[['bp_gwascat']]
 InfoGC=opt[['print_gwascat']]
 PvalGC=opt[['pval_gwascat']]
+LimPvalGC=opt[['threshpval_gwascat']]
+print(PvalGC)
+if(is.null(PvalGC) | length(PvalGC)==0 |PvalGC=='NA' | PvalGC=='na' | PvalGC=='GC' | is.na(PvalGC)){
+PvalGC=NULL
+}
+if(is.null(InfoGC) | length(InfoGC)==0 |InfoGC=='NA' | InfoGC=='na' | InfoGC=='GC' | is.na(InfoGC)){
+InfoGC=NULL
+}else{
+InfoGC=unlist(strsplit(InfoGC, split=','))
+}
 
 GwasFile=opt[['gwas_file']]
 ChroGW=opt[['chro_gwas']]
@@ -77,7 +87,6 @@ BetaGW=opt[['beta_gwas']]
 RsGW=opt[['rs_gwas']]
 PvalGW=opt[['pval_gwas']]
 AfGW=opt[['af_gwas']]
-LimPvalGC=opt[['threshpval_gwascat']]
 LimPval=opt[['threshpval']]
 
 InfoGene=opt[['info_gene']]
@@ -111,7 +120,7 @@ filelib=filelibi
 }
 
 if(filelib==""){
-cat('not found ', filelib, ,'in path\n')
+cat('not found ', filelib,'in path\n')
 q(2)
 }
 
@@ -120,7 +129,7 @@ source(filelib)
 listout_excel=list()
 
 if(fileknit==""){
-cat('not found ', fileknit, ,'in path\n')
+cat('not found ', fileknit,'in path\n')
 q(2)
 }
 
@@ -133,19 +142,21 @@ LimPval=opt[['threshpval']]
 DataClump=read.table(opt[['clump']], header=T)
 DirPWD=getwd()
 
-GCHeadTmp<-c(ChroGC,PosGC, PvalGC,unlist(strsplit(InfoGC, split=',')))
+GCHeadTmp<-c(ChroGC,PosGC, PvalGC,InfoGC)
 GCHeadTmpNF<-GCHeadTmp[!(GCHeadTmp %in% names(DataGWASCat))]
 if(length(GCHeadTmpNF)>0){
-cat('not found', GCHeadTmpNF, 'in info')
+cat('not found', GCHeadTmpNF, 'in info\n')
 q(2)
 }
 
 GWHeadTmp<-c(ChroGW,PosGW, SeGW, BetaGW, RsGW, PvalGW,AfGW)
-GWHeadTmp<-GCHeadTmp[!(GCHeadTmp %in% names(DataGWASCat))]
+GWHeadTmp<-GWHeadTmp[!(GWHeadTmp %in% names(DataGWAS))]
 if(length(GWHeadTmp)>0){
 cat('not found', GWHeadTmp, 'in gwas')
 q(2)
 }
+
+
 
 
 knit(fileknit)

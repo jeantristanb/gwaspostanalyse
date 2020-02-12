@@ -55,7 +55,7 @@
 if(!is.null(PvalGC) & !is.null(LimPvalGC)){
 DataGWASCat<-DataGWASCat[DataGWASCat[,PvalGC]<=LimPvalGC,]
 }
-DataGC<-MakeGwasCatInfo(DataGWASCat,ChroGC,PosGC, paste(InfoGC,',', RsGC,sep=''))
+DataGC<-MakeGwasCatInfo(DataGWASCat,ChroGC,PosGC, paste(c(InfoGC, RsGC),collapse=','))
 
 DataResBlock<-merge(DataResBlockI,DataGWAS, by.x='RsClump', by.y=RsGW)
 DataGWASAll<-merge(DataResBlock,DataGC, by.x=c("Chro", "BPInfo"), by.y=c(ChroGC,PosGC), all.x=T)
@@ -64,7 +64,11 @@ DataGWASAll<-DataGWASAll[!is.na(DataGWASAll$nbpubli),]
 
 ## merge data 
 Cmt<-1
-for(Col in c(RsGC,strsplit(InfoGC, split=',')[[1]], 'RsClump')){
+listInfoGC<-NULL
+if(!is.null(InfoGC)){
+listInfoGC<-strsplit(InfoGC, split=',')[[1]]
+}
+for(Col in c(RsGC,listInfoGC, 'RsClump')){
 tmp<-aggregate(as.formula(paste(Col,"~Chro+BeginBlock+EndBlock")), data=DataGWASAll, FUN=function(x)paste(unique(strspl(x)), collapse=", "))
 if(Cmt==1)GWASWind<-tmp
 else GWASWind<-merge(GWASWind, tmp,all=T,by=c("Chro","BeginBlock","EndBlock"))

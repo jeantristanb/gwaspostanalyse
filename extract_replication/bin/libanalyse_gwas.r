@@ -1,4 +1,5 @@
 MakeGwasCatInfo<-function(DataI, Chro,Pos,Info){
+if(!is.null(Info)){
 Cmt<-1
 listhead=strsplit(Info,split=",")[[1]]
 for(head in listhead){
@@ -7,9 +8,17 @@ if(Cmt==1)DataF<-DataHead
 else DataF<-merge(DataF,DataHead,all=T, by=c(Chro,Pos))
 Cmt<-Cmt+1
 }
+
 tmpnbpubli<-aggregate(as.formula(paste(head,"~",paste(Chro,Pos,sep="+"),sep="")), data=DataI, FUN=length)
 names(tmpnbpubli)<-c(Chro,Pos,'nbpubli')
 DataF<-merge(DataF,tmpnbpubli)
+}else{
+DataI$Nb<-1
+head='Nb'
+tmpnbpubli<-aggregate(as.formula(paste(head,"~",paste(Chro,Pos,sep="+"),sep="")), data=DataI, FUN=length)
+names(tmpnbpubli)<-c(Chro,Pos,'nbpubli')
+DataF<-tmpnbpubli
+}
 DataF
 }
 as.characterspe<-function(x,round){

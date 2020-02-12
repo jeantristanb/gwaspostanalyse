@@ -36,6 +36,10 @@ def parseArguments():
     parser.add_argument('--keep',type=str,required=False,help="size_win_kbs size in kb")
     parser.add_argument('--bfile',type=str,help="bfile to defined clump in gwas file", required=True)
     parser.add_argument('--cpus',type=str,help="cpus for plink", required=False, default=1)
+    parser.add_argument('--file_gwas', type=str, help='gwas file for change rs with chr and bp')
+    parser.add_argument('--chro_header_gwas', type=str, help='gwas file for change rs with chr and bp')
+    parser.add_argument('--bp_header_gwas', type=str, help='gwas file for change rs with chr and bp')
+    parser.add_argument('--rs_header_gwas', type=str, help='gwas file for change rs with chr and bp')
     args = parser.parse_args()
     return args
 
@@ -49,11 +53,48 @@ size_win_kb=args.size_win_kb
 filebed = write_list_info(args.list_info, ChroHeadInf,BpHeadInf, size_win_kb*1000, args.out)
 #plink -bfile $bfileI --keep $FileInd --extract range $FileCat".range" --make-bed --out $bfile  --keep-allele-order &
 
-Cmd=args.bin_plink+" -bfile "+args.bfile+" --extract range " +filebed+ " --make-bed --out "+args.out+ " --keep-allele-order --threads "+args.cpus
+Cmd=args.bin_plink+" -bfile "+args.bfile+" --extract range " +filebed+ " --make-bed --out "+args.out+ ".tmp --keep-allele-order --threads "+args.cpus
 
 if args.keep :
  Cmd+=" --keep "+args.keep
 
 os.system(Cmd)
 
+#--chro_header_gwas ${params.head_chr}  --bp_header_gwas ${params.head_bp} --rs_header_gwas ${params.head_rs}  --file_gwas $gwas
+## read bim file to define chr, rs
+readbim=open(args.out+'.tmp.bim')
+dicbim={}
+#1	rs555500075	0	10352	TA	T
+for line in readbim :
+    splline=line.split()
+    if splline[0] not in dicbim :
+      dicbim[splline[0]]={} 
+    dicbim[splline[0]][splline[3]]=[splline[1],splline[4],splline[5]] 
+readbim.close()
+filerseq=open('tmp_eq.rs','w')
+#filerseq.write('NewID\tOldID\n')
+readgwas=open(args.file_gwas)
+head=readgwas.readline().split()
+posrs=head.index(args.rs_header_gwas)
+posbp=head.index(args.bp_header_gwas)
+poschro=head.index(args.chro_header_gwas)
+nbchange=0
+for line in  readgwas :
+   spl=line.split()
+   if (spl[poschro] in dicbim) and (spl[posbp] in dicbim[spl[poschro]]) :
+      info=dicbim[spl[poschro]][spl[posbp]]
+      if info[0]!=spl[posrs] :
+         filerseq.write(spl[posrs]+'\t'+info[0]+'\n') 
+         #filerseq.write(info[0]+'\t'+spl[posrs]+'\n') 
+         nbchange+=1
+filerseq.close()
+
+if nbchange>0 :
+     Cmd=args.bin_plink+" -bfile "+args.out+".tmp --make-bed --out "+args.out+ " --keep-allele-order --threads "+args.cpus+" --update-name  tmp_eq.rs 1 2   "
+     print(Cmd)
+     os.system(Cmd)
+else :
+    os.system('mv '+args.out+'.tmp.bim '+ args.out+'.bim') 
+    os.system('mv '+args.out+'.tmp.bed '+ args.out+'.bed') 
+    os.system('mv '+args.out+'.tmp.fam '+ args.out+'.fam') 
 

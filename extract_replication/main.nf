@@ -91,7 +91,6 @@ params.head_bp_gwascat="Chro37"
 params.head_chro_gwascat="Pos37"
 params.head_pval_gwascat="P.VALUE"
 params.head_rs_gwascat="SNPS"
-//"SNPS"	"DATE.ADDED.TO.CATALOG"	"PUBMEDID"	"FIRST.AUTHOR"	"DATE"	"JOURNAL"	"LINK"	"STUDY"	"DISEASE.TRAIT"	"INITIAL.SAMPLE.SIZE"	"REPLICATION.SAMPLE.SIZE"	"REGION"	"CHR_ID"	"CHR_POS"	"REPORTED.GENE.S."	"MAPPED_GENE"	"UPSTREAM_GENE_ID"	"DOWNSTREAM_GENE_ID"	"SNP_GENE_IDS"	"UPSTREAM_GENE_DISTANCE"	"DOWNSTREAM_GENE_DISTANCE"	"STRONGEST.SNP.RISK.ALLELE"	"MERGED"	"SNP_ID_CURRENT"	"CONTEXT"	"INTERGENIC"	"RISK.ALLELE.FREQUENCY"	"P.VALUE"	"PVALUE_MLOG"	"P.VALUE..TEXT."	"OR.or.BETA"	"X95..CI..TEXT."	"PLATFORM..SNPS.PASSING.QC."	"CNV"	"MAPPED_TRAIT"	"MAPPED_TRAIT_URI"	"STUDY.ACCESSION"	"GENOTYPING.TECHNOLOGY"	"PosBegin38"	"PosEnd38"	"Chr38"	"Ref"	"Alt"	"Chro37"	"PosBegin37"	"PosEnd37"
 
 params.info_gwascat="DISEASE.TRAIT,REPORTED.GENE.S.,MAPPED_GENE,INITIAL.SAMPLE.SIZE"
 params.threshold_pval_gwascat=1
@@ -161,7 +160,8 @@ process GetGeneFile{
 }
 
 }else{
-geneinfo_ch=Channel.fromPath(params.genes_file)
+geneinfo_ch_pos=Channel.fromPath(params.genes_file)
+geneinfo_ch_byblock=Channel.fromPath(params.genes_file)
 }
 
 
@@ -180,6 +180,7 @@ Channel
 
 fileinfogwas_bed=Channel.fromPath(params.gwas_cat)
 
+filegwassub=Channel.fromPath(params.file_gwas)
 process SubBedFile{
     memory params.mem_plink
     time params.big_time
@@ -187,13 +188,14 @@ process SubBedFile{
    input :
      file(file_info) from fileinfogwas_bed
      set file(bed), file(bim), file(fam) from raw_src_ch
+     file(gwas) from filegwassub
    output :
        set file("${out}.bed"), file("${out}.bim"), file("${out}.fam") into sub_plkfile
    script :
      plk=bed.baseName
      out=plk+"_sub"
      """
-     subsample_plk.py --out $out --chro_header_info ${params.head_chr_gwascat} --bp_header_info ${params.head_bp_gwascat} --list_info ${file_info}  --bfile $plk --cpus ${params.cpu_plink} --size_win_kb ${params.size_win_kb}
+     subsample_plk.py --out $out --chro_header_info ${params.head_chr_gwascat} --bp_header_info ${params.head_bp_gwascat} --list_info ${file_info}  --bfile $plk --cpus ${params.cpu_plink} --size_win_kb ${params.size_win_kb} --chro_header_gwas ${params.head_chr}  --bp_header_gwas ${params.head_bp} --rs_header_gwas ${params.head_rs}  --file_gwas $gwas
      """
 }
 
@@ -238,7 +240,7 @@ process AnalyzeByPos{
     file("$outxlxs")
     file('figure/*')
   script :
-    pvalgwascat =  (params.head_pval_gwascat!='') ? " --pval_gwascat ${params.head_pval_gwascat} --threshpval_gwascat ${params.threshold_pval_gwascat}" : ""
+    pvalgwascat =  (params.head_pval_gwascat!='NA') ? " --threshpval_gwascat ${params.threshold_pval_gwascat}   --pval_gwascat ${params.head_pval_gwascat}" : ""
     out=params.output+"_bypos.pdf"
     outxlxs=params.output+"_bypos.xlsx"
     """
@@ -264,7 +266,7 @@ process AnalyzeByBlock{
     file("$outxlxs")
     file('figure/*')
   script :
-    pvalgwascat =  (params.head_pval_gwascat!='') ? " --pval_gwascat ${params.head_pval_gwascat} --threshpval_gwascat ${params.threshold_pval_gwascat}" : ""
+    pvalgwascat =  (params.head_pval_gwascat!='NA') ? " --pval_gwascat ${params.head_pval_gwascat} --threshpval_gwascat ${params.threshold_pval_gwascat}" : ""
     out=params.output+"_bypos.pdf"
     outxlxs=params.output+"_bypos.xlsx"
     """

@@ -33,7 +33,7 @@ def read_list_info(file_inf, ChroHeadInf,BpHeadInf, Wind):
       dic_list_inf[chro].sort()
    print("---- end : read pos to search in "+args.list_info+"----")
    return (dic_list_inf,list_inf)
-   
+      
 def WriteGWASPlk(file_gwas,infopos, fileplkgwas, filesubgwas,args, infors, ResLD=None) :
    print("---- begin : format gwas for plk ----")
    readgwas=open(file_gwas)

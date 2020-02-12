@@ -42,9 +42,9 @@ option_list = list(
   make_option("--beta_gwascat", type="character",
               help="file gwas contains resultat ", metavar="character"),
   make_option("--print_gwascat", type="character",
-              help="file gwas contains resultat ", metavar="character"),
+              help="file gwas contains resultat ", metavar="character", default=NA),
   make_option("--pval_gwascat", type="character",
-              help="file gwas contains resultat ", metavar="character"),
+              help="file gwas contains resultat ", metavar="character", default=NA),
   make_option("--info_gene", type="character",
               help="file gwas contains resultat ", metavar="character"),
   make_option("--threshpval_gwascat", type="double",
@@ -77,6 +77,15 @@ PosGC=opt[['bp_gwascat']]
 InfoGC=opt[['print_gwascat']]
 PvalGC=opt[['pval_gwascat']]
 RsGC=opt[['rs_gwascat']]
+
+if(is.null(PvalGC) | length(PvalGC)==0 |PvalGC=='NA' | PvalGC=='na' | PvalGC=='GC' | is.na(PvalGC)){
+PvalGC=NULL
+}
+if(is.null(InfoGC) | length(InfoGC)==0 |InfoGC=='NA' | InfoGC=='na' | InfoGC=='GC' | is.na(InfoGC)){
+InfoGC=NULL
+}else{
+InfoGC=unlist(strsplit(InfoGC, split=','))
+}
 
 #ChroGC='Chro37';PosGC='PosBegin37';InfoGC='DISEASE.TRAIT,REPORTED.GENE.S.,MAPPED_GENE,INITIAL.SAMPLE.SIZE';#;RsGC='RSID'
 #RsGC='SNPS'
@@ -139,6 +148,8 @@ cat('not found ', fileknit, ,'in path\n')
 q(2)
 }
 
+
+
 DataGWAS=as.data.frame(fread(GwasFile, header=T))
 DataGWASCat<-read.table(GWASCat,sep='\t', header=T)
 DataGene=read.table(InfoGene ,sep='\t', header=T)
@@ -148,6 +159,20 @@ LimPval=opt[['threshpval']]
 DataClump=read.table(opt[['clump']], header=T)
 DataResBlockI=read.table(opt[['res_block']], header=T)
 DirPWD=getwd()
+
+GCHeadTmp<-c(ChroGC,PosGC, PvalGC,InfoGC, RsGC)
+GCHeadTmpNF<-GCHeadTmp[!(GCHeadTmp %in% names(DataGWASCat))]
+if(length(GCHeadTmpNF)>0){
+cat('not found', GCHeadTmpNF, 'in info\n')
+q(2)
+}
+
+GWHeadTmp<-c(ChroGW,PosGW, SeGW, BetaGW, RsGW, PvalGW,AfGW)
+GWHeadTmp<-GWHeadTmp[!(GWHeadTmp %in% names(DataGWAS))]
+if(length(GWHeadTmp)>0){
+cat('not found', GWHeadTmp, 'in gwas')
+q(2)
+}
 
 knit(fileknit)
 library(openxlsx)
