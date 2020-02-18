@@ -1,0 +1,1 @@
+../../analyse_multigwas/bin/ManPlot.r
