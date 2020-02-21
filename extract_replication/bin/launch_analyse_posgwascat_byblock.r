@@ -177,6 +177,11 @@ q(2)
 knit(fileknit)
 library(openxlsx)
 options(java.parameters = "-Xmx8000m")
+if(length(listout_excel)==0){
+listout_excel[['res_windld']]=matrix('nothing found',nrow=1,ncol=1)
+dir.create('figure/')
+writeLines(c('no result'),con='figure/none')
+}
 write.xlsx(listout_excel,file= paste("resume_tab.xlsx",sep=""))
 
 

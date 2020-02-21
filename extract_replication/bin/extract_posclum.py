@@ -27,8 +27,10 @@ def read_list_info(file_inf, ChroHeadInf,BpHeadInf, Wind):
       if spl[poschro] not in dic_list_inf :
          dic_list_inf[spl[poschro]]=[]
          list_inf[spl[poschro]]={}
-      dic_list_inf[spl[poschro]].append([int(spl[posbp])-Wind, int(spl[posbp])+Wind, int(spl[posbp])])
-      list_inf[spl[poschro]][int(spl[posbp])]=None
+      if spl[posbp]!='NA':
+        postmp=int(float(spl[posbp]))
+        dic_list_inf[spl[poschro]].append([postmp-Wind,postmp+Wind, postmp])
+        list_inf[spl[poschro]][postmp]=None
    for chro in dic_list_inf.keys():
       dic_list_inf[chro].sort()
    print("---- end : read pos to search in "+args.list_info+"----")
@@ -52,10 +54,13 @@ def WriteGWASPlk(file_gwas,infopos, fileplkgwas, filesubgwas,args, infors, ResLD
    writegwas_linfo=open(args.out+'.in.list_info','w')
    writegwas_linfo.write(headgwas)
    writegwassub.write(headgwas)
+   othergwaspval=[]
    for line in readgwas:
      spl=line.split()
      chro=spl[ChroPosGwas]
-     bp=int(spl[BpPosGwas])
+     if spl[BpPosGwas]=='NA':
+        continue
+     bp=int(float(spl[BpPosGwas]))
      rs=spl[RsPosGwas]
      Pv=spl[PvPosGwas]
      if (spl[ChroPosGwas] in listchro) :
@@ -70,6 +75,8 @@ def WriteGWASPlk(file_gwas,infopos, fileplkgwas, filesubgwas,args, infors, ResLD
            writegwasplk.write(rs+"\t"+Pv+"\n")
            writegwassub.write(line)
            cmtline+=1
+         else :
+           othergwaspval.append(float(Pv))
        elif CheckPosInLPos(infopos[spl[ChroPosGwas]], float(bp)) :
          if chro not in infogwas :
             infogwas[chro]={}
@@ -81,7 +88,7 @@ def WriteGWASPlk(file_gwas,infopos, fileplkgwas, filesubgwas,args, infors, ResLD
    writegwasplk.close()
    writegwassub.close()
    print("---- end : format gwas for plk ----")
-   return infogwas
+   return (infogwas, othergwaspval)
 
 ## What done : used position to analyse, to search in data_clump what is position most closest
 ## write final 
@@ -175,11 +182,47 @@ def GetLDInfo(infopos, ldfile):
            #pos[3]=infold
            dicldwind[chro].append(infold)
    return dicldwind 
-def GetResByLDWind(ld_info, data_clump, infors,out):
+
+import time
+import random
+
+from multiprocessing import Process, Queue, current_process, freeze_support
+def getminpvalrand(args,args2):
+        return min(random.sample(args, args2))
+
+def GetPvalAdj2(pval,listpvali,nsnp, nbrep, nbprocess):
+    def calculate(func, args):
+      result = func(*args)
+      return  result
+
+    def worker(input, output):
+      for func, args in iter(input.get, 'STOP'):
+         result = calculate(func, args)
+         output.put(result)
+
+    TASKS1 = [(getminpvalrand, ([listpvali, nsnp])) for i in range(nbrep)]
+    task_queue = Queue()
+    done_queue = Queue()
+
+    # Submit tasks
+    for task in TASKS1:
+        task_queue.put(task)
+    for i in range(nbprocess):
+            Process (target=worker, args=(task_queue, done_queue)).start()
+    res=[]
+    for i in range(len(TASKS1)):
+        res.append(done_queue.get())
+    for i in range(nbprocess):
+        task_queue.put('STOP')
+
+    return len([x for x in res if x<=pval])/float(nbrep)
+
+def GetResByLDWind(ld_info, data_clump, infors,out, listpval, nbrepet, nbprocess):
     ## we extracted all ld_block with info_pos
   cmtpos=0
-  print("---- begin :merge clump and dataI by  ----")
-  Header="Chro\tBeginBlock\tEndBlock\tBPClump\tPClump\tRsClump\tBPInfo"
+  print(' nbprocess '+str(nbprocess))
+  print("---- begin :merge clump and dataI by block ----")
+  Header="Chro\tBeginBlock\tEndBlock\tBPClump\tPClump\tPAdjOtherP\tPWindAdjRand\tRsClump\tBPInfo"
   Write=open(out+".clump.ldbloc.detail", 'w')
   Write.write(Header+'\n')
   for chro in ld_info.keys() :
@@ -189,7 +232,13 @@ def GetResByLDWind(ld_info, data_clump, infors,out):
         posend=int(info[1])
         for index, row in data_clump_chr.iterrows():
           if int(row['BP'])>= posbegin and int(row['BP'])<=posend :
-            chaine=chro+"\t"+str(posbegin)+"\t"+str(posend)+"\t"+str(row['BP'])+"\t"+str(row['P'])+"\t"+infors[chro][row['BP']][0]+"\t"
+            TotalNbSnp=int(row['TOTAL'])
+            PI=float(row['P'])
+            #PvalAdjRandWind=GetPvalAdj2(PI,listpval,TotalNbSnp, nbrepet, nbprocess)
+            PvalAdjRandWind="NA"
+            nbpossamp=int(len(listpval)/2)
+            PvalAdj=len([x for x in random.sample(listpval,nbpossamp) if x <PI])/nbpossamp
+            chaine=chro+"\t"+str(posbegin)+"\t"+str(posend)+"\t"+str(row['BP'])+"\t"+str(row['P'])+"\t"+str(PvalAdj)+"\t"+str(PvalAdjRandWind)+"\t"+infors[chro][row['BP']][0]+"\t"
             AllChaine=""
             for Snp in info[3] :
                AllChaine+=chaine+"\t"+str(Snp[2])+"\n"
@@ -216,6 +265,7 @@ def parseArguments():
     parser.add_argument('--minpval',type=str,help="clump option", default="0.1")
     parser.add_argument('--r2',type=str,help="clump option ", default="0.1")
     parser.add_argument('--cpus',type=str,help="clump option ", default="2")
+    parser.add_argument('--nbrepetpval',type=int,help="clump option ", default=10000)
     parser.add_argument('--bfile',type=str,help="bfile to defined clump in gwas file", required=True)
     parser.add_argument('--keep',type=str,help="option keep of plink ", default=None)
     parser.add_argument('--file_block_ld', type=str, help="block ld plink file obtained with output --block : .blocks.det", default=None, required=True)
@@ -245,7 +295,7 @@ if args.file_block_ld :
    ResLd=GetLDInfo(infopos, args.file_block_ld)    
 else :
    ResLd=None
-infogwas=WriteGWASPlk(args.file_gwas, infopos,fileplkgwas,filesubgwas, args, infors, ResLd) 
+(infogwas,otherpval)=WriteGWASPlk(args.file_gwas, infopos,fileplkgwas,filesubgwas, args, infors, ResLd) 
 
 fileoutpltmp=args.out+".plk"
 fileoutpl=fileoutpltmp+".clumped"
@@ -254,7 +304,7 @@ if args.keep :
    " --keep "+args.keep
 if os.path.isfile(fileoutpl)==False or renew:
    print("---- plink launch ----")
-   os.system(args.binplinks+" -bfile "+args.bfile+" --clump "+fileplkgwas+" --clump-p1 "+ args.minpval+" --clump-p2 1 "+" --clump-kb "+str(windows_size_kb)+"  --clump-r2 "+args.r2+" --out "+fileoutpltmp+" "+keep+" --threads "+args.cpus)
+   os.system(args.binplinks+" -bfile "+args.bfile+" --clump "+fileplkgwas+" --clump-p1 "+ args.minpval+" --clump-p2 1 "+" --clump-kb "+str(windows_size_kb)+"  --clump-r2 "+args.r2+" --out "+fileoutpltmp+" "+keep+" --threads "+args.cpus+"  --clump-allow-overlap ")
    print("---- end plink ----")
 else :
     print("not plink using file "+fileoutpl)
@@ -271,7 +321,7 @@ GetResByPos(infopos,data_clump, windows_size_kb, args.out)
 GetResByRs(infopos,data_clump, windows_size_kb, infors,args.out)
 
 if args.file_block_ld :
-   GetResByLDWind(ResLd, data_clump, infogwas,args.out)
+   GetResByLDWind(ResLd, data_clump, infogwas,args.out, otherpval,args.nbrepetpval, int(args.cpus))
 
 
 

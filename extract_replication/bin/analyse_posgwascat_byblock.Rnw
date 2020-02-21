@@ -68,6 +68,13 @@ listInfoGC<-NULL
 if(!is.null(InfoGC)){
 listInfoGC<-strsplit(InfoGC, split=',')[[1]]
 }
+if(nrow(DataGWASAll)==0){
+cat('no solution found')
+knit_exit()
+}
+kable(DataGWASAll)
+@
+<<charge_function2,  comment=NA, results = 'hide', echo=FALSE >>=
 for(Col in c(RsGC,listInfoGC, 'RsClump')){
 tmp<-aggregate(as.formula(paste(Col,"~Chro+BeginBlock+EndBlock")), data=DataGWASAll, FUN=function(x)paste(unique(strspl(x)), collapse=", "))
 if(Cmt==1)GWASWind<-tmp

@@ -40,6 +40,9 @@ def parseArguments():
     parser.add_argument('--chro_header_gwas', type=str, help='gwas file for change rs with chr and bp')
     parser.add_argument('--bp_header_gwas', type=str, help='gwas file for change rs with chr and bp')
     parser.add_argument('--rs_header_gwas', type=str, help='gwas file for change rs with chr and bp')
+    parser.add_argument('--a1_header_gwas', type=str, help='gwas file for change rs with chr and bp')
+    parser.add_argument('--a0_header_gwas', type=str, help='gwas file for change rs with chr and bp')
+    args = parser.parse_args()
     args = parser.parse_args()
     return args
 
@@ -78,20 +81,31 @@ head=readgwas.readline().split()
 posrs=head.index(args.rs_header_gwas)
 posbp=head.index(args.bp_header_gwas)
 poschro=head.index(args.chro_header_gwas)
-nbchange=0
-for line in  readgwas :
-   spl=line.split()
-   if (spl[poschro] in dicbim) and (spl[posbp] in dicbim[spl[poschro]]) :
+if args.a1_header_gwas and args.a0_header_gwas:
+  nbchange=0
+  posa0=head.index(args.a0_header_gwas)
+  posa1=head.index(args.a1_header_gwas)
+  for line in  readgwas :
+     spl=line.split()
+     if (spl[poschro] in dicbim) and (spl[posbp] in dicbim[spl[poschro]]) :
+      info=dicbim[spl[poschro]][spl[posbp]]
+      if (spl[posa0]==info[1] and spl[posa1]==info[2]) or (spl[posa0]==info[2] and spl[posa1]==info[1]) :
+        if info[0]!=spl[posrs] :
+          filerseq.write(spl[posrs]+'\t'+info[0]+'\n')
+          nbchange+=1
+else :
+  nbchange=0
+  for line in  readgwas :
+     spl=line.split()
+     if (spl[poschro] in dicbim) and (spl[posbp] in dicbim[spl[poschro]]) :
       info=dicbim[spl[poschro]][spl[posbp]]
       if info[0]!=spl[posrs] :
          filerseq.write(spl[posrs]+'\t'+info[0]+'\n') 
-         #filerseq.write(info[0]+'\t'+spl[posrs]+'\n') 
          nbchange+=1
 filerseq.close()
 
 if nbchange>0 :
      Cmd=args.bin_plink+" -bfile "+args.out+".tmp --make-bed --out "+args.out+ " --keep-allele-order --threads "+args.cpus+" --update-name  tmp_eq.rs 1 2   "
-     print(Cmd)
      os.system(Cmd)
 else :
     os.system('mv '+args.out+'.tmp.bim '+ args.out+'.bim') 

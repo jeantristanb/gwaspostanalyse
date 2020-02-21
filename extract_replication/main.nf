@@ -195,7 +195,8 @@ process SubBedFile{
      plk=bed.baseName
      out=plk+"_sub"
      """
-     subsample_plk.py --out $out --chro_header_info ${params.head_chr_gwascat} --bp_header_info ${params.head_bp_gwascat} --list_info ${file_info}  --bfile $plk --cpus ${params.cpu_plink} --size_win_kb ${params.size_win_kb} --chro_header_gwas ${params.head_chr}  --bp_header_gwas ${params.head_bp} --rs_header_gwas ${params.head_rs}  --file_gwas $gwas
+     subsample_plk.py --out $out --chro_header_info ${params.head_chr_gwascat} --bp_header_info ${params.head_bp_gwascat} --list_info ${file_info}  --bfile $plk --cpus ${params.cpu_plink} --size_win_kb ${params.size_win_kb} --chro_header_gwas ${params.head_chr}  --bp_header_gwas ${params.head_bp} --rs_header_gwas ${params.head_rs}  --file_gwas $gwas --a1_header_gwas ${params.head_A1} --a0_header_gwas ${params.head_A0}
+
      """
 }
 
@@ -267,8 +268,8 @@ process AnalyzeByBlock{
     file('figure/*')
   script :
     pvalgwascat =  (params.head_pval_gwascat!='NA') ? " --pval_gwascat ${params.head_pval_gwascat} --threshpval_gwascat ${params.threshold_pval_gwascat}" : ""
-    out=params.output+"_bypos.pdf"
-    outxlxs=params.output+"_bypos.xlsx"
+    out=params.output+"_byblock.pdf"
+    outxlxs=params.output+"_byblock.xlsx"
     """
     launch_analyse_posgwascat_byblock.r --res_block $file_res --chro_gwascat ${params.head_chr_gwascat} --bp_gwascat ${params.head_bp_gwascat} --gwas_cat $infogwas --gwas_file $gwas --chro_gwas ${params.head_chr}  --bp_gwas ${params.head_bp} --rs_gwas ${params.head_rs} $pvalgwascat --pval_gwas ${params.head_pval} --threshpval ${params.threshpval} --print_gwascat ${params.info_gwascat} --info_gene $geneinfo --haploblocks $haploblocks --clump $clump --size_win_kb ${params.size_win_kb} --rs_gwascat ${params.head_rs_gwascat} --a1_gwas ${params.head_A1} --a0_gwas ${params.head_A0}
     mv analyse_posgwascat_byblock.pdf $out
