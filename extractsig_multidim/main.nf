@@ -145,16 +145,16 @@ def configfile_analysis(file){
 info_file=configfile_analysis(params.file_config)
 
 
-liste_filesi_ch=Channel.fromPath(info_file[0]).merge(Channel.from(info_file[1]))
+liste_filesi_ch=Channel.fromPath(info_file[0]).merge(Channel.from(info_file[1])).merge(Channel.from(1..info_file[0].size()))
 
 process ExtractRsSig{
     input :
-      set file(file_assoc), val(head_file) from liste_filesi_ch
+      set file(file_assoc), val(head_file), num from liste_filesi_ch
     output :
       file(filers) into (listrs_sig)
 
     script :
-       filers=file_assoc+".rs"
+       filers=file_assoc+"_${num}.rs"
        """
        extract_rssigv2.py  --input_file $file_assoc --out_file $filers --info_file \"$head_file\" --threshold ${params.pval_thresh} --cut_maf  ${params.cut_maf}
        """
@@ -186,16 +186,18 @@ process DefineWind{
       define_windsig.py --file_rs $allrs --around ${params.around_rs} --out rs_infowind
       """
 }
-liste_filesi_ch_2=Channel.fromPath(info_file[0]).merge(Channel.from(info_file[1])).merge(Channel.from(info_file[2])).combine(allrs_sig)
+liste_filesi_ch_2=Channel.fromPath(info_file[0]).merge(Channel.from(info_file[1])).merge(Channel.from(info_file[2])).merge(Channel.from(1..info_file[0].size()))
+liste_filesi_ch_3=liste_filesi_ch_2.combine(allrs_sig)
+
 process ExtractInfoSig{
        input :
-         set file(file_assoc), val(head_file), val(info_file), file(allrs) from liste_filesi_ch_2
+         set file(file_assoc), val(head_file), val(info_file), val(num),file(allrs) from liste_filesi_ch_3
        output :
          file(fileout) into listres_sig
        script:
-        fileout=file_assoc+".sub_file"
+        fileout="${file_assoc}_${num}.sub_file"
         """
-        extract_possig.py  --input_file $file_assoc --out_file $fileout --head_info \"$head_file\" --info_file $allrs
+        extract_possig.py  --input_file $file_assoc --out_file $fileout --head_info \"$head_file\" --info_file $allrs 
         """
 }
 asso_sig_col=listres_sig.collect()
