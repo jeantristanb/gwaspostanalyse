@@ -25,7 +25,7 @@ def GetInfo(File):
     ListPos=set([])
     for Line in Read:
        Line=Line.replace('\n','')
-       Spl=Line.split('\t')
+       Spl=Line.split()
        ListPos.add(Spl[0]+':'+Spl[1])
     return ListPos
 
