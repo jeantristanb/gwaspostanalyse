@@ -51,6 +51,7 @@ params.input_listfiles = "${params.work_dir}/list_files.input"
 params.output_dir = "${params.work_dir}/output"
 params.output = "replication"
 params.cut_maf = 0.00
+params.file_chroposi = ""
 
 
 params.mem_req="8G"
@@ -147,6 +148,7 @@ info_file=configfile_analysis(params.file_config)
 
 liste_filesi_ch=Channel.fromPath(info_file[0]).merge(Channel.from(info_file[1])).merge(Channel.from(1..info_file[0].size()))
 
+if(params.file_chroposi==""){
 process ExtractRsSig{
     input :
       set file(file_assoc), val(head_file), num from liste_filesi_ch
@@ -173,6 +175,10 @@ process MergeSigRs{
       """
       cat $allfilersjoin|sort|uniq > $allrs
       """
+}
+}else{
+allrs_sig=Channel.fromPath(params.file_chroposi)
+allrs_sig_plot=Channel.fromPath(params.file_chroposi)
 }
 
 process DefineWind{
