@@ -62,7 +62,7 @@ params.around_rs=250000
 
 
 params.max_pval_rep=10**-6
-params.nb_cpu = 3
+params.nb_cpu = 5
 
 params.gwas_cat="/dataE/AWIGenGWAS/shared/ResultGWAS/Ressource/GWAS_Catalog_V37.tsv"
 // haploblocks information
@@ -147,6 +147,7 @@ info_file=configfile_analysis(params.file_config)
 
 
 liste_filesi_ch=Channel.fromPath(info_file[0]).merge(Channel.from(info_file[1])).merge(Channel.from(1..info_file[0].size()))
+liste_filesi_ch_qq=Channel.fromPath(info_file[0]).merge(Channel.from(info_file[1])).merge(Channel.from(1..info_file[0].size()))
 
 if(params.file_chroposi==""){
 process ExtractRsSig{
@@ -168,7 +169,7 @@ process MergeSigRs{
    input : 
       file(allfilers) from listrs_sig_col
    output :
-      file(allrs) into (allrs_sig,allrs_sig_plot)
+      file(allrs) into (allrs_sig,allrs_sig_plot, allrs_sig_qq)
    script :
       allrs='allrs.rs'
       allfilersjoin=allfilers.join(" ")
@@ -179,6 +180,36 @@ process MergeSigRs{
 }else{
 allrs_sig=Channel.fromPath(params.file_chroposi)
 allrs_sig_plot=Channel.fromPath(params.file_chroposi)
+allrs_sig_qq=Channel.fromPath(params.file_chroposi)
+}
+liste_filesi_ch_qqf=liste_filesi_ch_qq.combine(allrs_sig_qq)
+process ManhattanPlot{
+  cpus params.nb_cpu
+  input :
+    set file(file_assoc), val(head_file), num, file(filers) from liste_filesi_ch_qqf
+  publishDir "${params.output_dir}/manhattan/", overwrite:true, mode:'copy',pattern: "*.png"
+  output :
+    file("*.png") into man_out_ch
+    file("*.qq") into fileqq_out_ch
+  script :
+    """ 
+    ManPlot.r --file $file_assoc --maf ${params.cut_maf} --type png --max_pval 1 --header ${head_file} --listrs $filers --num $num 
+    """
+} 
+
+fileqq_out_ch_col=fileqq_out_ch.collect()
+process DoQQPlot{
+  input :
+    file(allqq) from fileqq_out_ch_col
+  publishDir "${params.output_dir}/qq/", overwrite:true, mode:'copy',pattern: "*.png"
+  output :
+    set file("${out}.pdf"), file("${out}.lambda") into qq_ch_all
+  script :
+   listfile=allqq.join(',')
+   out='qqall'
+   """
+   DoQQAll.r --listfile  $listfile --out $out  --type pdf
+   """ 
 }
 
 process DefineWind{
@@ -280,11 +311,14 @@ locuszoom_col=locuszoom_type.collect()
 }else{
 locuszoom_col=file('FILE_NO')
 }
+man_out_col=man_out_ch.collect()
 process DoReport{
   input :
     file(locuszoom) from locuszoom_col     
     file(csv) from resumcsv
     file(rswind) from rs_infowind
+    set file(qqfig), file(lambfig),file(lambval) from qq_ch_all
+    file(man) from man_out_col
   publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
   output :
     set file("$outpdf"), file("$outtex"), file("$outcsv")
@@ -293,11 +327,12 @@ process DoReport{
    tmpfile=params.work_dir+'/.tempfile'
    File writ = new File("${params.work_dir}/.tempfile")
    writ.write(lzm)
+   man_str=man.join(',')
    outpdf="${params.output}.pdf"
    outtex="${params.output}.tex"
    outcsv="${params.output}_short.csv"
    """
-   launch_doreport.r --list_pdf $tmpfile --csv_res $csv --rs_info $rswind --csv_out  $outcsv
+   launch_doreport.r --list_pdf $tmpfile --csv_res $csv --rs_info $rswind --csv_out  $outcsv --qq_fig $qqfig --lamb_fig $lambfig --lamb_val $lambval --man_fig $man_str
    mv do_report.pdf $outpdf
    mv do_report.tex $outtex
    """

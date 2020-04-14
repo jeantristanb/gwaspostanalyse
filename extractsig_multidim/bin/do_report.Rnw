@@ -44,12 +44,13 @@
 
 \setlength{\parskip}{6pt}
 \setlength{\parindent}{0pt}
-\title{Analyse of comparison of gwas summary stat}
+\title{Comparison of summary stat of GWAS}
 \date{\today}
 \author{Nextflow \thanks{SBIMB}, SBMIB}
 \begin{document}
 \maketitle
 \begin{landscape}
+
 <<function,comment=NA,echo=FALSE >>=
 FigureInTabOld<-function(infocol,listfig, title,nbcol=1){
 Figure<-function(figname,scale, title=''){
@@ -91,7 +92,27 @@ headtable
 }
 
 
+LatexFig<-function(Fig,HeadFig, LabFig)paste(c("\begin{figure}[H]","\\centering",paste("\\includegraphics{",Fig,"}",sep=''),paste("\\caption{",HeadFig,"}")."\\label{",LabFig,"}","\\end{figure}"), collapse="\n")
 @
+\section{Comparison of QQ}
+\subsection{QQ plot}
+<<plotqq,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "QQplot of pvalue of gwas result found in gwas catalog",fig.pos="H", fig.width=4, fig.height=4>>=
+cat(LatexFig(FileQQ, "Comparison of different QQ", "CmpQQ"),"\n")
+@
+
+\subsection{lambda value}
+<<lambda,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "QQplot of pvalue of gwas result found in gwas catalog",fig.pos="H", fig.width=4, fig.height=4>>=
+kable(DataLamb, "latex", caption=paste("comparison of lambda value computed withGenAbel "), booktabs=T, row.names=F)
+cat(LatexFig(FileLam, "comparison of lambda value computed withGenAbel", "CmpLamb"),"\n")
+@
+\section{Manhatan plot}
+<<man,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "QQplot of pvalue of gwas result found in gwas catalog",fig.pos="H", fig.width=4, fig.height=4>>=
+for(fileman in ListFigMan){
+cat("\n","\\subsection{",basename(fileman),"}\n")
+cat(LatexFig(filenam, paste("manhattan of ", fileman), fileman),"\n")
+}
+@
+\section{table of comparison of value}
 <<dotable,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "QQplot of pvalue of gwas result found in gwas catalog",fig.pos="H", fig.width=4, fig.height=4>>=
 NameCSV=headCSV
 
