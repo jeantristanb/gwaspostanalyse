@@ -68,13 +68,13 @@ names(PdfMat)<-c('Chro', 'Pos', 'Info','Type', 'path')
 ## qqplot
 FileQQ=paste(DirPWD,opt[['qq_fig']],sep='/')
 DataLamb=read.table(opt[['lamb_val']],header=T)
-FileLamb=paste(DirPWD,opt)
+FileLam=paste(DirPWD,opt[['lamb_fig']],sep='/')
 DataCSVI<-read.csv(opt[['csv_res']])
 infors=read.table(opt[['rs_info']] ,header=F)
 DataCSV<-merge(DataCSVI, infors, by.x=c('chr','bp'), by.y=c("V1","V2"))
 DataCSV<-DataCSV[,c("V3","V4",names(DataCSVI))]
 
-ListFigMan=paste(PWD,unlist(strsplit(opt[['man_fig']],split=',')),sep='/')
+ListFigMan=paste(DirPWD,unlist(strsplit(opt[['man_fig']],split=',')),sep='/')
 
 headCSV<-c("begin windows", "end windows", strsplit(readLines(opt[['csv_res']], 1),split=',')[[1]])
 DataCSVPrint<-DataCSV

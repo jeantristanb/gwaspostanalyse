@@ -8,7 +8,7 @@ def write_list_info(file_inf, ChroHeadInf,BpHeadInf, Wind, Out):
    print("---- begin : read pos to search in "+args.list_info+"----")
    read=open(file_inf)
    write=open(Out+".tmp",'w')
-   head=read.readline()
+   head=read.readline().replace('\n','')
    spl=head.replace('\n','').replace('"','').split('\t')
    poschro=spl.index(ChroHeadInf)
    posbp=spl.index(BpHeadInf)

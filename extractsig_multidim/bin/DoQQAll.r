@@ -108,10 +108,11 @@ listfile=list()
 listlamb=list()
 CmtF=1
 for(File in listfilename){
-head=gsub("\\.qq$","",basename(File))
+head=gsub("^[0-9]+_","",gsub("\\.qq$","",basename(File)))
 tmp<-as.data.frame(fread(File, header=F))
 tmp<-na.omit(tmp)
 tmp<-tmp[!is.infinite(tmp[,1]) & !is.infinite(tmp[,2]),]
+tmp<-tmp[order(tmp[,1]),]
 listfile[[head]]=tmp
 lam=estlambda(10**(-tmp[,2]))
 lam2<-data.frame(head=head, lambda=lam$estimate ,se=lam$se)
@@ -123,7 +124,7 @@ listhead=names(listfile)
 DataFra$lower=DataFra$lambda - 1.96 * DataFra$se
 DataFra$upper=DataFra$lambda + 1.96 * DataFra$se
 
-write.table(DataFra,row.names=F, col.names=T, file=paste(opt[['out']],'.lamda' ,sep=''),quote=F, sep='\t')
+write.table(DataFra,row.names=F, col.names=T, file=paste(opt[['out']],'.lambda' ,sep=''),quote=F, sep='\t')
 
 
 

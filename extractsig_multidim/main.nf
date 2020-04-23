@@ -201,14 +201,15 @@ fileqq_out_ch_col=fileqq_out_ch.collect()
 process DoQQPlot{
   input :
     file(allqq) from fileqq_out_ch_col
-  publishDir "${params.output_dir}/qq/", overwrite:true, mode:'copy',pattern: "*.png"
+  publishDir "${params.output_dir}/qq/", overwrite:true, mode:'copy',pattern: 'qqall*'
   output :
-    set file("${out}.pdf"), file("${out}.lambda") into qq_ch_all
+    set file("${out}.${typeout}"), file("${out}.lambda"), file("${out}_lambda.${typeout}") into qq_ch_all
   script :
    listfile=allqq.join(',')
    out='qqall'
+   typeout="png"
    """
-   DoQQAll.r --listfile  $listfile --out $out  --type pdf
+   DoQQAll.r --listfile  $listfile --out $out  --type $typeout
    """ 
 }
 
@@ -317,7 +318,7 @@ process DoReport{
     file(locuszoom) from locuszoom_col     
     file(csv) from resumcsv
     file(rswind) from rs_infowind
-    set file(qqfig), file(lambfig),file(lambval) from qq_ch_all
+    set file(qqfig), file(lambval),file(lambfig) from qq_ch_all
     file(man) from man_out_col
   publishDir "${params.output_dir}/", overwrite:true, mode:'copy'
   output :

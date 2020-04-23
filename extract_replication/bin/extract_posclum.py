@@ -16,7 +16,7 @@ def CheckPosInLPos(listpos, pos):
 def read_list_info(file_inf, ChroHeadInf,BpHeadInf, Wind):
    print("---- begin : read pos to search in "+args.list_info+"----")
    read=open(file_inf)
-   head=read.readline()
+   head=read.readline().replace('\n','')
    spl=head.replace('"','').split('\t')
    poschro=spl.index(ChroHeadInf)
    posbp=spl.index(BpHeadInf)
