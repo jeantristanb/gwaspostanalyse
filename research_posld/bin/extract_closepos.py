@@ -188,7 +188,7 @@ for chro in infopos :
         cp2=respos[1][0]
         r2=respos[1][2]
       resall+=[cp1,r1,cp2,r2]
-    writeall.write("\t".join(resall)+'\n')
+    writeall.write("\t".join([str(x) for x in resall)+'\n')
 ## read file bim contains position of chip
 #print(infspos)
 #print(infors)
