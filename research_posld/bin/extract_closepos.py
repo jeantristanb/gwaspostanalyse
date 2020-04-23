@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import sys
 import re
 import os
 import numpy as np
@@ -98,7 +99,10 @@ winf.write("\n".join(set(chaineld)))
 winf.close()
 cmd=args.binplinks+" -bfile "+args.bfile+" --threads "+args.cpus+"  --r2 --extract range "+ infogwas+" -out "+args.out+" --maf 0.00001 "+"--ld-window-kb "+str(windows_size_kb) + "   --ld-window-r2 0 --ld-window 99999 "#+" --blocks-min-maf " #+" --ld-snps range "+infogwas)
 #print(cmd)
-#os.system(cmd)
+outcmd=os.system(cmd)
+if outcmd!=0:
+  print("plink command doesn t work exit")
+  sys.exit(outcmd)
 #os.system(args.binplinks+" -bfile "+args.bfile+" --threads "+args.cpus+"  --r2  -out "+args.out+" --maf 0.00001 "+"--ld-window-kb "+str(windows_size_kb)+" --ld-snps range "+infogwas)
 
 ##
@@ -118,30 +122,30 @@ for line in readld :
   Pos1=int(spl[1])
   Pos2=int(spl[4])
   ## case where solution
-  #if  ((Pos1 in infoposchr[chro]) or (Pos2 in infoposchr[chro]))==False :
-  #  print('a '+chro+' '+str(Pos1)+' '+str(Pos2))
-  #if  ((Pos1 in biminfo[chro]) or (Pos2 in biminfo[chro])):
-  #  print('b '+chro+' '+str(Pos1)+' '+str(Pos2))
   if ((chro in infoposchr) and (chro in biminfo)) and ((Pos1 in infoposchr[chro]) or (Pos2 in infoposchr[chro])) and ((Pos1 in biminfo[chro]) or (Pos2 in biminfo[chro])):
    ##
    R2=float(spl[6])
-   if Pos1 in infoposchr[chro]: 
+   balise=False
+   if (Pos1 in infoposchr[chro]) and (Pos2 in biminfo[chro]): 
+      balise=True
       PosI=Pos1 
       PosB=Pos2
       Rs1=spl[2]
       Rs2=spl[5]
-   else :
+   elif (Pos2 in infoposchr[chro]) and (Pos1 in biminfo[chro]): 
+      balise=True
       PosI=Pos2 
       PosB=Pos1
       Rs2=spl[2]
       Rs1=spl[5]
-   if chro not in resld:
-     resld[chro]={} 
-   if PosI not in resld[chro]:
-     resld[chro][PosI]={}
-   if PosB in resld[chro][PosI]:
-      print(str(PosI)+' '+str(PosB)+' found already')
-   resld[chro][PosI][PosB]=[Rs1,Rs2,R2]
+   if balise :
+     if chro not in resld:
+       resld[chro]={} 
+     if PosI not in resld[chro]:
+       resld[chro][PosI]={}
+     if PosB in resld[chro][PosI]:
+       print(str(PosI)+' '+str(PosB)+' found already')
+     resld[chro][PosI][PosB]=[Rs1,Rs2,R2]
 
 #for Chro in resld :
 # for Pos in resld[Chro]:
@@ -152,7 +156,11 @@ def takesecond(x):
    return x[1]
 def takethird(x):
    return x[2]
+def checkinlist(x,liste):
+   if x not in liste:
+     sys.exit('pos '+str(x)+'not in bim')
 headfile="chro\tpos\tInBim\tcloses\tclose2\tnearr2\tr2\tnearr22\tr22"
+writeall.write(headfile+'\n')
 for chro in infopos :
   for posrang in infopos[chro]:
     pos = posrang[2]
@@ -173,10 +181,12 @@ for chro in infopos :
       cp2="NA"
       if len(respos)>0 :
         cp1=respos[0][0]
+        checkinlist(cp1,biminfo[chro])
       if len(respos)>1 :
         cp2=respos[1][0]
+        checkinlist(cp2,biminfo[chro])
       resall+=[cp1,cp2]
-      respos.sort(key=takethird)
+      respos.sort(key=takethird, reverse=True)
       cp1="NA"
       cp2="NA"
       r1="NA"
@@ -184,19 +194,10 @@ for chro in infopos :
       if len(respos)>0 :
         cp1=respos[0][0]
         r1=respos[0][2]
+        checkinlist(cp1,biminfo[chro])
       if len(respos)>1 :
         cp2=respos[1][0]
         r2=respos[1][2]
+        checkinlist(cp1,biminfo[chro])
       resall+=[cp1,r1,cp2,r2]
-    writeall.write("\t".join([str(x) for x in resall)+'\n')
-## read file bim contains position of chip
-#print(infspos)
-#print(infors)
-## write gwas information
-#(infogwas,otherpval)=WriteGWASPlk(args.file_gwas, infopos,fileplkgwas,filesubgwas, args, infors, ResLd)
-##Clump
-
-##
-
-
-
+    writeall.write("\t".join([str(x) for x in resall])+'\n')
