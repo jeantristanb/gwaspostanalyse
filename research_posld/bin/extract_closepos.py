@@ -161,6 +161,7 @@ for chro in infopos :
        IsInBim="T"
     else :
        IsInBim="F"
+    resall.append(IsInBim)
     if pos not in resld[chro] :
       print("not found "+' '+chro+' '+str(pos))
       resall+=['NA','NA','NA','NA','NA',"NA"]
@@ -187,7 +188,7 @@ for chro in infopos :
         cp2=respos[1][0]
         r2=respos[1][2]
       resall+=[cp1,r1,cp2,r2]
-     writeall.write("\t".join(resall)+'\n')
+    writeall.write("\t".join(resall)+'\n')
 ## read file bim contains position of chip
 #print(infspos)
 #print(infors)
