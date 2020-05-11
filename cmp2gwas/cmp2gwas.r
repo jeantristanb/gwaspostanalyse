@@ -11,9 +11,9 @@ option_list = list(
               help="data files with phenotype and FID", metavar="character"),
   make_option(c("--chr_f2"), type="character",
               help="data files with phenotype and FID", metavar="character"),
-  make_option(c("--bp_f1"), type="character",
+  make_option(c("--ps_f1"), type="character",
               help="data files with phenotype and FID", metavar="character"),
-  make_option(c("--bp_f2"), type="character",
+  make_option(c("--ps_f2"), type="character",
               help="data files with phenotype and FID", metavar="character"),
   make_option(c("--a0_f1"), type="character",
               help="data files with phenotype and FID", metavar="character"),
@@ -39,6 +39,10 @@ option_list = list(
               help="data files with phenotype and FID", metavar="character"),
   make_option(c("--head_f2"), type="character",
               help="data files with phenotype and FID", metavar="character"),
+  make_option(c("--p_f1"), type="character",
+              help="data files with phenotype and FID", metavar="character"),
+  make_option(c("--p_f2"), type="character",
+              help="data files with phenotype and FID", metavar="character"),
   make_option(c("--out"), type="character", default="out",
               help="output file name [default= %default]", metavar="character")
 );
@@ -51,12 +55,17 @@ initialname<-c()
 newname<-c()
 for(val in listhead){
 if(!is.null(listinfo[[val]])){
+#cat(val,listinfo[[val]], '\n')
 initialname<-c(initialname,listinfo[[val]])
 newname<-c(newname,val)
 }
 }
+#print(as.vector(initialname))
+#print(as.vector(newname))
 Data<-Data[ ,as.vector(initialname),with = FALSE]
 names(Data)<-newname
+if('chr_f1' %in% names(Data))Data[['chr_f1']]<-as.character(Data[['chr_f1']])
+if('chr_f2' %in% names(Data))Data[['chr_f2']]<-as.character(Data[['chr_f2']])
 return(Data)
 }
 
@@ -68,7 +77,7 @@ if(length(args)==0){
 opt=list(
 data_f1='/home/jeantristan/Data/DataGWASCKD/UACR/Format/Teumeretal2019/formatted_20180202-UACR_overall-AA-nstud_1-SumMac_400.rsid.format.awigen',
 chr_f1='chr',
-bp_f1='bp',
+ps_f1='bp',
 beta_f1='beta',
 a1_f1='a1',
 a0_f1='a0',
@@ -78,14 +87,14 @@ p_f1='p',
 #chr	rs	ps	n_miss	allele1	allele0	af	beta	se	logl_H1	l_remle	p_wald
 data_f2='/home/jeantristan/Travail/GWAS/GWAS_CKD/ImputedDataV3/Result/agesexpca/Res/LogNewAcr/LogNewAcr_All_agesexpca_20190120.imp.stat',
 chr_f2='chr',
-bp_f2='ps',
+ps_f2='ps',
 beta_f2='beta',
 a1_f2='allele1',
 a0_f2='allele0',
 se_f2='se',
 af_f2='af',
-p_f2='p_wald'
-head_f1='Teumer'
+p_f2='p_wald',
+head_f1='Teumer',
 head_f2='Awigen'
 )
 }else{
@@ -94,7 +103,7 @@ opt = parse_args(opt);
 }
 
 Head1=opt[['head_f1']]
-Head2=opt[['head_f1']]
+Head2=opt[['head_f2']]
 GetCommon<-function(ChrPos1, ChrPos2,Head1, Head2){
 NbPos1<-length(ChrPos1)
 NbPos2<-length(ChrPos2)
@@ -104,11 +113,11 @@ ResumeNbBase$Perc<-ResumeNbBase$Count/sum(ResumeNbBase$Count)*100
 ResumeNbBase
 }
 
-Data1<-readfile(opt[['data_f1']], opt,grep('data_f1',grep('_f1',names(opt),value=T), invert=T, value=T))
-Data2<-readfile(opt[['data_f2']], opt,grep('data_f2',grep('_f2',names(opt),value=T), invert=T, value=T))
+Data1<-readfile(opt[['data_f1']], opt,grep('head_',grep('data_f1',grep('_f1',names(opt),value=T), invert=T, value=T),value=T,invert=T))
+Data2<-readfile(opt[['data_f2']], opt,grep('head_',grep('data_f2',grep('_f2',names(opt),value=T), invert=T, value=T),value=T,invert=T))
 
 
-DataAll=merge(Data1,Data2, by.x=c('chr_f1', 'bp_f1'),  by.y=c('chr_f2', 'bp_f2'), all=T)
+DataAll=merge(Data1,Data2, by.x=c('chr_f1', 'ps_f1'),  by.y=c('chr_f2', 'ps_f2'), all=T)
 
 ## exchange b and af 
 DataAll$af_f2_old<-DataAll$af_f2
@@ -124,9 +133,9 @@ DataAll$a0_f2[balise]<-DataAll$a1_f2_old[balise]
 
 ## 
 ## co
-Data1$ChrPos<-paste(Data1$chr_f1, Data1$bp_f1)
-Data2$ChrPos<-paste(Data2$chr_f2, Data2$bp_f2)
-DataAll$ChrPos<-paste(DataAll$chr_f1, DataAll$bp_f1)
+Data1$ChrPos<-paste(Data1$chr_f1, Data1$ps_f1)
+Data2$ChrPos<-paste(Data2$chr_f2, Data2$ps_f2)
+DataAll$ChrPos<-paste(DataAll$chr_f1, DataAll$ps_f1)
 
 
 ResumeNbBase<-GetCommon(Data1$ChrPos,Data2$ChrPos,Head1, Head2)

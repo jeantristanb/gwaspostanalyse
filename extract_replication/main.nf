@@ -23,8 +23,8 @@ def helps = [ 'help' : 'help' ]
 allowed_params = ["cut_maf", "output_dir", "pb_around_rs", "mem_req", "work_dir","mem_req","big_time", "output","nb_cpu" , "input_dir","input_pat", "file_gwas", "gwas_cat", "site_wind", "r2_clump","min_pval_clump", "size_win_kb"]
 allowed_params_blocks = ["haploblocks", "plkref_haploblocks", "plk_othopt_haploblocks"]
 allowed_params_other=["max_forks", "strandreport", "manifest", "idpat", "accessKey", "access-key", "secretKey", "secret-key","region", "AMI","maxInstances","instance-type", "instanceType", "bootStorageSize", "boot-storage-size", "max-instances", "sharedStorageMount", "shared-storage-mount", "scripts"]
-allowed_params_headinfo=["head_chr_gwascat", "head_bp_gwascat"]
-allowed_params_head = ["head_pval", "head_freq", "head_bp", "head_chr", "head_rs", "head_beta", "head_se", "head_A1", "head_A2"]
+allowed_params_headinfo=["head_chro_gwascat", "head_bp_gwascat", "head_pval_gwascat"]
+allowed_params_head = ["head_pval", "head_freq", "head_bp", "head_chr", "head_rs", "head_beta", "head_se", "head_A1", "head_A0"]
 allowed_params+=allowed_params_head
 allowed_params+=allowed_params_other
 allowed_params+=allowed_params_blocks
@@ -66,7 +66,7 @@ params.data = ""
 params.head_beta="BETA"
 params.head_se="SE"
 params.head_A1="ALLELE1"
-params.head_A2="ALLELE0"
+params.head_A0="ALLELE0"
 
 
 params.max_pval_rep=10**-6
@@ -87,10 +87,11 @@ params.genes_file=""
 params.gene_file_ftp="ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19/gencode.v19.annotation.gtf.gz"
 
 //params gwas cat 
-params.head_bp_gwascat="Chro37"
-params.head_chro_gwascat="Pos37"
-params.head_pval_gwascat="P.VALUE"
+params.head_bp_gwascat="PosBegin37"
+params.head_chro_gwascat="Chro37"
+params.head_pval_gwascat=""
 params.head_rs_gwascat="SNPS"
+
 
 params.info_gwascat="DISEASE.TRAIT,REPORTED.GENE.S.,MAPPED_GENE,INITIAL.SAMPLE.SIZE"
 params.threshold_pval_gwascat=1
@@ -195,7 +196,7 @@ process SubBedFile{
      plk=bed.baseName
      out=plk+"_sub"
      """
-     subsample_plk.py --out $out --chro_header_info ${params.head_chr_gwascat} --bp_header_info ${params.head_bp_gwascat} --list_info ${file_info}  --bfile $plk --cpus ${params.cpu_plink} --size_win_kb ${params.size_win_kb} --chro_header_gwas ${params.head_chr}  --bp_header_gwas ${params.head_bp} --rs_header_gwas ${params.head_rs}  --file_gwas $gwas --a1_header_gwas ${params.head_A1} --a0_header_gwas ${params.head_A0}
+     subsample_plk.py --out $out --chro_header_info ${params.head_chro_gwascat} --bp_header_info ${params.head_bp_gwascat} --list_info ${file_info}  --bfile $plk --cpus ${params.cpu_plink} --size_win_kb ${params.size_win_kb} --chro_header_gwas ${params.head_chr}  --bp_header_gwas ${params.head_bp} --rs_header_gwas ${params.head_rs}  --file_gwas $gwas --a1_header_gwas ${params.head_A1} --a0_header_gwas ${params.head_A0}
 
      """
 }
@@ -221,7 +222,7 @@ process ComputedReplication{
      plk=bed.baseName
      out=params.output
      """ 
-     extract_posclum.py --bfile $plk --chro_header_info ${params.head_chr_gwascat} --bp_header_info ${params.head_bp_gwascat} --list_info ${file_info}  --bfile $plk --cpus ${params.cpu_plink} --size_win_kb ${params.size_win_kb} --out ${params.output} --chro_header_gwas ${params.head_chr}  --bp_header_gwas ${params.head_bp} --rs_header_gwas ${params.head_rs} --pval_header_gwas ${params.head_pval} --minpval ${params.min_pval_clump} --r2 ${params.r2_clump} --binplink ${params.plink_bin} --file_gwas $gwas --file_block_ld $haploblock
+     extract_posclum.py --bfile $plk --chro_header_info ${params.head_chro_gwascat} --bp_header_info ${params.head_bp_gwascat} --list_info ${file_info}  --bfile $plk --cpus ${params.cpu_plink} --size_win_kb ${params.size_win_kb} --out ${params.output} --chro_header_gwas ${params.head_chr}  --bp_header_gwas ${params.head_bp} --rs_header_gwas ${params.head_rs} --pval_header_gwas ${params.head_pval} --minpval ${params.min_pval_clump} --r2 ${params.r2_clump} --binplink ${params.plink_bin} --file_gwas $gwas --file_block_ld $haploblock
      """ 
 }
 
@@ -241,11 +242,11 @@ process AnalyzeByPos{
     file("$outxlxs")
     file('figure/*')
   script :
-    pvalgwascat =  (params.head_pval_gwascat!='NA') ? " --threshpval_gwascat ${params.threshold_pval_gwascat}   --pval_gwascat ${params.head_pval_gwascat}" : ""
+    pvalgwascat =  (params.head_pval_gwascat!='') ? " --threshpval_gwascat ${params.threshold_pval_gwascat}   --pval_gwascat ${params.head_pval_gwascat}" : ""
     out=params.output+"_bypos.pdf"
     outxlxs=params.output+"_bypos.xlsx"
     """
-    launch_analyse_posgwascat_bypos.r --chro_gwascat ${params.head_chr_gwascat} --bp_gwascat ${params.head_bp_gwascat} --gwas_cat $infogwas --gwas_file $gwas --chro_gwas ${params.head_chr}  --bp_gwas ${params.head_bp} --rs_gwas ${params.head_rs} $pvalgwascat --pval_gwas ${params.head_pval} --threshpval ${params.threshpval} --print_gwascat ${params.info_gwascat} --info_gene $geneinfo --haploblocks $haploblocks --clump $clump --size_win_kb ${params.size_win_kb}
+    launch_analyse_posgwascat_bypos.r --chro_gwascat ${params.head_chro_gwascat} --bp_gwascat ${params.head_bp_gwascat} --gwas_cat $infogwas --gwas_file $gwas --chro_gwas ${params.head_chr}  --bp_gwas ${params.head_bp} --rs_gwas ${params.head_rs} $pvalgwascat --pval_gwas ${params.head_pval} --threshpval ${params.threshpval} --print_gwascat ${params.info_gwascat} --info_gene $geneinfo --haploblocks $haploblocks --clump $clump --size_win_kb ${params.size_win_kb}
     mv analyse_posgwascat_bypos.pdf $out
     mv resume_tab.xlsx $outxlxs
     """
@@ -267,18 +268,15 @@ process AnalyzeByBlock{
     file("$outxlxs")
     file('figure/*')
   script :
-    pvalgwascat =  (params.head_pval_gwascat!='NA') ? " --pval_gwascat ${params.head_pval_gwascat} --threshpval_gwascat ${params.threshold_pval_gwascat}" : ""
+    pvalgwascat =  (params.head_pval_gwascat!='') ? " --pval_gwascat ${params.head_pval_gwascat} --threshpval_gwascat ${params.threshold_pval_gwascat}" : ""
     out=params.output+"_byblock.pdf"
     outxlxs=params.output+"_byblock.xlsx"
     """
-    launch_analyse_posgwascat_byblock.r --res_block $file_res --chro_gwascat ${params.head_chr_gwascat} --bp_gwascat ${params.head_bp_gwascat} --gwas_cat $infogwas --gwas_file $gwas --chro_gwas ${params.head_chr}  --bp_gwas ${params.head_bp} --rs_gwas ${params.head_rs} $pvalgwascat --pval_gwas ${params.head_pval} --threshpval ${params.threshpval} --print_gwascat ${params.info_gwascat} --info_gene $geneinfo --haploblocks $haploblocks --clump $clump --size_win_kb ${params.size_win_kb} --rs_gwascat ${params.head_rs_gwascat} --a1_gwas ${params.head_A1} --a0_gwas ${params.head_A0}
+    launch_analyse_posgwascat_byblock.r --res_block $file_res --chro_gwascat ${params.head_chro_gwascat} --bp_gwascat ${params.head_bp_gwascat} --gwas_cat $infogwas --gwas_file $gwas --chro_gwas ${params.head_chr}  --bp_gwas ${params.head_bp} --rs_gwas ${params.head_rs} $pvalgwascat --pval_gwas ${params.head_pval} --threshpval ${params.threshpval} --print_gwascat ${params.info_gwascat} --info_gene $geneinfo --haploblocks $haploblocks --clump $clump --size_win_kb ${params.size_win_kb} --rs_gwascat ${params.head_rs_gwascat} --a1_gwas ${params.head_A1} --a0_gwas ${params.head_A0}
     mv analyse_posgwascat_byblock.pdf $out
     mv resume_tab.xlsx $outxlxs
     """
 }
-
-//echo "python3 /home/jeantristan/Travail/GWAS/PythonScript/extract_posclum.py --list_info $FileCat --file_gwas $FileGWAS --wind_size $WindSize --out $Out --chro_header_info $ChrInfo --bp_header_info $BpInfo --chro_header_gwas $ChrGWAS --bp_header_gwas $BpGWAS --rs_header_gwas $RsGWAS --pval_header_gwas $PvalGWAS --bfile $bfile --maxpval $pval --r2 $R2 --file_block_ld All_block.blocks.extented.det" >> $BashFile
-
 
 
 
