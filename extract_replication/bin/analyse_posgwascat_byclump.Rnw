@@ -1,0 +1,188 @@
+
+\documentclass[12pt]{article}
+
+%to test two table a cote
+\usepackage{longtable}
+
+
+
+\usepackage{times}
+\usepackage{hyperref}
+% position in figure => [H] => figure/table positioning in the place write
+\usepackage{float}
+%option booktabs=T, dans kable
+\usepackage{booktabs}
+%to use < and > directly in latex
+\usepackage[T1]{fontenc}
+%  \rowcolors
+\usepackage[table]{xcolor}
+\usepackage{multicol}
+
+\usepackage{lscape}
+\newcommand{\subsubsubsection}[1]{\paragraph{#1}\mbox{}\\}
+\setcounter{secnumdepth}{4}
+\setcounter{tocdepth}{4}
+% seting level of numbering (default for "report" is 3). With ''-1'' you have non number also for chapters
+
+\usepackage{subfig}
+\usepackage{array}
+\usepackage{multicol}
+\hypersetup{pdfpagemode=UseNone} % don't show bookmarks on initial view
+\hypersetup{colorlinks, urlcolor={blue}}
+
+
+% revise margins
+\setlength{\headheight}{0.0in}
+\setlength{\topmargin}{0.0in}
+\setlength{\headsep}{0.0in}
+\setlength{\textheight}{8.65in}
+\setlength{\footskip}{0.35in}
+\setlength{\oddsidemargin}{0.0in}
+\setlength{\evensidemargin}{0.0in}
+\setlength{\textwidth}{6.5in}
+
+\setlength{\parskip}{6pt}
+\setlength{\parindent}{0pt}
+\title{Report for transferability : analyse by clump}
+\date{\today}
+\author{Nextflow \thanks{SBIMB}, SBMIB}
+\begin{document}
+\maketitle
+
+
+<<charge_function,  comment=NA,  results = 'asis',echo=FALSE >>=
+
+## deleted with gwas cat error
+if(!is.null(PvalGC) & !is.null(LimPvalGC)){
+DataGWASCat<-DataGWASCat[DataGWASCat[,PvalGC]<=LimPvalGC,]
+}
+DataGC<-MakeGwasCatInfo(DataGWASCat,ChroGC,PosGC, paste(c(InfoGC, RsGC),collapse=','))
+
+## merge  between DataGWAS and Data used
+DataResBlock<-merge(DataResClumpI[,c("CHR","BP","BPI","RSI","F","SNP","P","TOTAL","NSIG")],DataGWAS, by.x='RSI', by.y=RsGW)
+DataGWASAll<-merge(DataResBlock,DataGC, by.x=c("CHR", "BPI"), by.y=c(ChroGC,PosGC), all.x=T)
+DataGWASAll<-DataGWASAll[!is.na(DataGWASAll$nbpubli),]
+
+
+## merge data 
+Cmt<-1
+listInfoGC<-NULL
+if(!is.null(InfoGC)){
+listInfoGC<-strsplit(InfoGC, split=',')[[1]]
+}
+if(nrow(DataGWASAll)==0){
+cat('no solution found')
+knit_exit()
+}
+listout_excel[['dataI']]=DataGWASAll
+######kable(DataGWASAll)
+for(Col in c(RsGC,listInfoGC, 'RSI')){
+tmp<-aggregate(as.formula(paste(Col,"~CHR+BP")), data=DataGWASAll, FUN=function(x)paste(unique(strspl(x)), collapse=", "))
+if(Cmt==1)GWASWind<-tmp
+else GWASWind<-merge(GWASWind, tmp,all=T,by=c("CHR","BP"))
+Cmt<-Cmt+1
+}
+@
+<<charge_function2,  comment=NA, results = 'asis', echo=FALSE >>=
+DataGWASAll$Wind<-paste(DataGWASAll$CHR,DataGWASAll$BP)
+Cmt<-1
+for(ChrSnp in unique(DataGWASAll$Wind)){
+SubData<-DataGWASAll[DataGWASAll$Wind==ChrSnp,]
+PClump<-min(SubData$P)
+MinPosP<-which.min(SubData$P)
+Rslump<-SubData$SNP[MinPosP]
+Chrolump=unique(SubData$CHR)
+if(!is.null(AfGW))AfClump<-SubData[MinPosP, AfGW] else AfClump=NA
+if(!is.null(BetaGW))BetaClump<-SubData[MinPosP,BetaGW] else BetaClump=NA
+if(!is.null(A1GW ))A1Clump<-SubData[MinPosP, A1GW] else A1Clump=NA
+if(!is.null(A0GW ))A0Clump<-SubData[MinPosP, A0GW] else A0Clump=NA
+if(!is.null(SeGW))SeClump<-SubData[MinPosP, SeGW] else SeClump=NA
+if(!is.null(PvalGW))PWClump<-SubData[MinPosP, PvalGW] else PWClump<-NA
+if(Cmt==1)DataPclumpMin<-data.frame(Wind=ChrSnp,MinPClump=PClump,MinPRsClump=Rslump, MinAfClump=AfClump, MinBetaClump=BetaClump, MinA1Clump=A1Clump, MinA0Clump=A0Clump, MinSeClump=SeClump, PClump=PWClump)
+else DataPclumpMin<-rbind(DataPclumpMin ,data.frame(Wind=ChrSnp,MinPClump=PClump,MinPRsClump=Rslump, MinAfClump=AfClump, MinBetaClump=BetaClump, MinA1Clump=A1Clump, MinA0Clump=A0Clump, MinSeClump=SeClump, PClump=PWClump))
+Cmt<-Cmt+1
+}
+GWASWind$Wind<-paste(GWASWind$CHR,GWASWind$BP)
+DataAllWithInfo<-merge(GWASWind,DataPclumpMin, by="Wind")
+DataAllWithInfo$p.adjust.bonf=p.adjust(DataAllWithInfo$MinPClump, 'bonferroni')
+listout_excel[['res_clump']]=DataAllWithInfo
+@
+\section{Parameters}
+Todo\\
+\section{Descriptifs}
+\begin{itemize}
+\item Rs number in gwas catalog : \Sexpr{nrow(DataGC)}, 
+%\item Windows with Rs and clumped data \Sexpr{nrow(DataAllWithInfo)}
+%\item NbWindows significant with bonferroni \Sexpr{length(which(DataAllWithInfo$p.adjust.bonf<LimPval))}
+\end{itemize}
+
+\section{Significance}
+\subsection{QQ plot}
+QQ plot using all common position between GWAS catalog and GWAS 
+<<qqplot,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "QQplot of pvalue of gwas result found in gwas catalog",fig.pos="H", fig.width=4, fig.height=4>>=
+qq(DataAllWithInfo[,'PClump'])
+@
+\subsection{Significance position : bonferroni}
+\Sexpr{length(which(DataAllWithInfo$p.adjust.bonf<LimPval))} positions found after an adjustment of bonferroni and threshold of \Sexpr{LimPval}
+\begin{landscape}
+<<tableresbonf,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "QQplot of pvalue of gwas result found in gwas catalog",fig.pos="H", fig.width=4, fig.height=4>>=
+
+DataAllWithInfo2<-DataAllWithInfo[order(DataAllWithInfo[,'CHR'],DataAllWithInfo[,'BP']),]
+DataAllWithInfo2<-DataAllWithInfo[DataAllWithInfo$p.adjust.bonf<=LimPval, !(names(DataAllWithInfo2) %in% 'Wind')]
+DataAllWithInfo2[,'MinPClump']<-as.characterspe(DataAllWithInfo2[,'MinPClump'], 2)
+DataAllWithInfo2[,'p.adjust.bonf']<-as.characterspe(DataAllWithInfo2[,'p.adjust.bonf'], 2)
+size<-paste(round(26/(ncol(DataAllWithInfo2))-1),"cm",sep="")
+kable(DataAllWithInfo2,"latex",caption=paste("significant pvalue found in gwas catalog"),booktabs = T, digits=1, row.names=F,  longtable = T,col.names=gsub("_"," ", names(DataAllWithInfo2)))    %>%  kable_styling(font_size = 8) %>% kable_styling(latex_options = c("striped", "HOLD_position")) #%>%  column_spec(2:(ncol(DataAllWithInfo2)+1), width = size) %>%  column_spec(1,width='2cm') 
+@
+\end{landscape}
+\subsection{Plot}
+
+
+<<plotwindbonf,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "QQplot of pvalue of gwas result found in gwas catalog",fig.pos="H", fig.width=4, fig.height=4>>=
+#PlotWindLocusZoom(Chro,BeginBlock, EndBlock, WindSize,DataGWAS, ChroGW,PosGW, RsGW,PvalGW,DataGC, DataClump, ListRs, DataGene,ChroGE, BeginGE, EndGE, NameGene)
+DataAllWithInfoBonf<-DataAllWithInfo[DataAllWithInfo$p.adjust.bonf<=LimPval, names(DataAllWithInfo)!='Wind']
+DataAllWithInfoBonf<-DataAllWithInfoBonf[order(DataAllWithInfoBonf[,'CHR'],DataAllWithInfoBonf[,'BP']),]
+
+NbWind=1
+GetBeginTab<-function(Nb)paste("\\begin{table}[ht]\n\\caption{ result for bonferroni correction table : ",Nb,"}\n\\centering\n\\begin{tabular}{cc}",sep="")
+GetEndTab<-function(Nb)paste("\\end{tabular}\n\\label{tab:Bonf",Nb,"}\n\\end{table}\\clearpage\n",sep="")
+
+CmtSig=1
+LatexOut=''
+NbFig=3
+DirFig=paste(DirPWD,'/figure/loczm/',sep='')
+if(!dir.exists(DirFig))dir.create(DirFig, recursive=T)
+for(CHR in unique(DataAllWithInfoBonf[,'CHR'])){
+LatexOut<-c(LatexOut,paste("\n\\subsubsection{ Chromosome :",CHR,"}"))
+DataGWASCHR<-DataAllWithInfoBonf[DataAllWithInfoBonf[,'CHR']==CHR,]
+CmtCountSig=0
+NbWind=1
+for(CmtSig in 1:nrow(DataGWASCHR)){
+if(CmtCountSig==0)LatexOut<-c(LatexOut,GetBeginTab(paste("CHR:", CHR,NbWind)),"")
+infosig<-DataGWASCHR[CmtSig,]
+FigName=paste(DirFig,'/',infosig[,'CHR'],'_',infosig$BP,'.pdf',sep="")
+pdf(FigName,width=7*1.25, height=7)
+#Bloc<-DataHaplo[DataHaplo$CHR==infosig[,CHRGW]& DataHaplo$BPI1<=infosig[,PosGW] & DataHaplo$BPI2>=infosig[,PosGW],]
+#if(Cmt==1)DataPclumpMin<-data.frame(Wind=Wind,MinPClump=PClump,MinPRsClump=Rslump, MinAfClump=AfClump, MinBetaClump=BetaClump, MinA1Clump=A1Clump, MinA0Clump=A0Clump, MinSeClump=SeClump, PClump=PWClump)
+PlotWindLocusZoom(infosig[,'CHR'],infosig$BP, infosig$BP, SizeWind,DataGWAS, ChroGW,PosGW, RsGW,PvalGW,DataGC, ChroGC, PosGC,DataClump, infosig[,'MinPRsClump'], DataGene,ChroGE, BeginGE, EndGE, NameGene, DataHaplo)
+dev.off()
+LatexOut=c(LatexOut,paste(paste(infosig[,'CHR'],infosig$BP, sep=':'),"&\\includegraphics[scale=0.33]{",FigName,"} \\\\",sep=""))
+CmtCountSig=CmtCountSig+1
+if(CmtCountSig==NbFig){
+LatexOut<-c(LatexOut,GetEndTab(paste("CHR:", CHR,NbWind)),"")
+CmtCountSig=0
+NbWind=NbWind+1
+}
+}
+if(CmtCountSig!=NbFig & CmtCountSig>0){
+LatexOut<-c(LatexOut,GetEndTab(paste(CHR,CmtCountSig)))
+CmtCountSig=0
+}
+}
+cat(paste(LatexOut,collapse='\n') ,'\n')
+@
+
+
+
+\end{document}
+
