@@ -1,7 +1,11 @@
 MakeGwasCatInfo<-function(DataI, Chro,Pos,Info){
 if(!is.null(Info)){
 Cmt<-1
+if(length(Info)==1){
 listhead=strsplit(Info,split=",")[[1]]
+}else{
+listhead=Info
+}
 for(head in listhead){
 DataHead<-aggregate(as.formula(paste(head,"~",paste(Chro,Pos,sep="+"),sep="")), data=unique(DataI[,c(Chro,Pos,head)]),FUN=function(x)paste(unique(x), collapse=";"))
 if(Cmt==1)DataF<-DataHead
