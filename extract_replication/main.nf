@@ -131,7 +131,7 @@ process MergeBlocsBedFile{
        file(allfile) from ch_block_merg
      publishDir "${params.output_dir}/blocs/", overwrite:true, mode:'copy'
      output :
-        file(out) into (ch_haploblocks, ch_haploblocks_byblock, ch_haploblocks_bypos)
+        file(out) into (ch_haploblocks, ch_haploblocks_byblock, ch_haploblocks_bypos, ch_haploblocks_clump)
      script :
         out='block_all.blocks' 
         allfilejoin=allfile.join(",")
@@ -144,12 +144,13 @@ process MergeBlocsBedFile{
 ch_haploblocks=Channel.fromPath(params.haploblocks)
 ch_haploblocks_byblock=Channel.fromPath(params.haploblocks)
 ch_haploblocks_bypos=Channel.fromPath(params.haploblocks)
+ch_haploblocks_clump=Channel.fromPath(params.haploblocks)
 }
 if(params.genes_file==""){
 process GetGeneFile{
      publishDir "${params.output_dir}/genes/", overwrite:true, mode:'copy'
      output:
-       file(out) into (geneinfo_ch_pos, geneinfo_ch_byblock) 
+       file(out) into (geneinfo_ch_pos, geneinfo_ch_byblock, geneinfo_ch_byclump) 
      script :
        out='gene_info.gene'
        """
@@ -162,6 +163,7 @@ process GetGeneFile{
 
 }else{
 geneinfo_ch_pos=Channel.fromPath(params.genes_file)
+geneinfo_ch_clump=Channel.fromPath(params.genes_file)
 geneinfo_ch_byblock=Channel.fromPath(params.genes_file)
 }
 
@@ -213,11 +215,11 @@ process ComputedReplication{
      file(haploblock) from ch_haploblocks
    output :
       file("${out}.clump.bypos") into clump_betweenpos
-      file("${out}.clump.byrs") into clump_usingrs
+      file("${out}.clump.byrs") into res_byclump
       file("${out}.in.list_info") into res_bypos
-      file("${out}.sub_gwas") into (file_sub_gwas_bypos,file_sub_gwas_byblock)
+      file("${out}.sub_gwas") into (file_sub_gwas_bypos,file_sub_gwas_byblock, file_sub_gwas_byclump)
       file("${out}.clump.ldbloc.detail") into res_byblock
-      file("${out}.plk.clumped") into (clump_res_byblock,clump_res_pos)
+      file("${out}.plk.clumped") into (clump_res_byblock,clump_res_pos, clump_res_clump)
    script :
      plk=bed.baseName
      out=params.output
@@ -225,6 +227,36 @@ process ComputedReplication{
      extract_posclum.py --bfile $plk --chro_header_info ${params.head_chro_gwascat} --bp_header_info ${params.head_bp_gwascat} --list_info ${file_info}  --bfile $plk --cpus ${params.cpu_plink} --size_win_kb ${params.size_win_kb} --out ${params.output} --chro_header_gwas ${params.head_chr}  --bp_header_gwas ${params.head_bp} --rs_header_gwas ${params.head_rs} --pval_header_gwas ${params.head_pval} --minpval ${params.min_pval_clump} --r2 ${params.r2_clump} --binplink ${params.plink_bin} --file_gwas $gwas --file_block_ld $haploblock
      """ 
 }
+
+fileinfogwas_ana_byclump=Channel.fromPath(params.gwas_cat)
+filegwas_anclump=Channel.fromPath(params.file_gwas)
+process AnalyzeByClump{
+  input :
+     file(infogwas) from fileinfogwas_ana_byclump
+     file(file_res) from res_byclump
+     file(gwas) from file_sub_gwas_byclump
+     file(geneinfo) from geneinfo_ch_clump
+     file(haploblocks) from ch_haploblocks_clump
+     file(clump) from clump_res_clump
+  publishDir "${params.output_dir}/clump/", overwrite:true, mode:'copy'
+  output :
+    file("$out")
+    file("$outxlxs")
+    file('figure/*')
+  script :
+    pvalgwascat =  (params.head_pval_gwascat!='') ? " --threshpval_gwascat ${params.threshold_pval_gwascat}   --pval_gwascat ${params.head_pval_gwascat}" : ""
+    out=params.output+"_byclump.pdf"
+    outxlxs=params.output+"_byclump.xlsx"
+    """
+    launch_analyse_posgwascat_byclump.r --res_clump $file_res --chro_gwascat ${params.head_chro_gwascat} --bp_gwascat ${params.head_bp_gwascat} --gwas_cat $infogwas --gwas_file $gwas --chro_gwas ${params.head_chr}  --bp_gwas ${params.head_bp} --rs_gwas ${params.head_rs} $pvalgwascat --pval_gwas ${params.head_pval} --threshpval ${params.threshpval} --print_gwascat ${params.info_gwascat} --info_gene $geneinfo --haploblocks $haploblocks --clump $clump --size_win_kb ${params.size_win_kb} --rs_gwascat ${params.head_rs_gwascat} --a1_gwas ${params.head_A1} --a0_gwas ${params.head_A0}
+    mv analyse_posgwascat_byclump.pdf $out
+    mv resume_tab.xlsx $outxlxs
+    """
+}
+
+
+
+
 
 fileinfogwas_ana_bypos=Channel.fromPath(params.gwas_cat)
 filegwas_anpos=Channel.fromPath(params.file_gwas)
