@@ -135,9 +135,18 @@ def GetResByRs(infopos,data_clump, windows_size_kb, infors,out):
      for info in infopos[chro] :
         pos=info[2]
         if infors[chro][pos] :
+           rsi=infors[chro][pos][0]
            rs=infors[chro][pos][0]+"("
            cmtpos=0
            found=False
+           for x in data_clump_chr['SNP'] :
+             if rsi in x :
+               Tmp=data_clump_chr.iloc[cmtpos]
+               listpos.append(pos)
+               listchro.append(chro)
+               listposi.append(Tmp['BP'])
+               listrsi.append(infors[chro][pos][0])
+               found =True
            for x in data_clump_chr['SP2'] :
              if rs in x :
                Tmp=data_clump_chr.iloc[cmtpos]

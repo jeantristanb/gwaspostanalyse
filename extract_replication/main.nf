@@ -57,14 +57,14 @@ params.mem_req="8G"
 params.big_time="100H"
 
 params.head_pval = "P_BOLT_LMM"
-params.head_freq = "A1FREQ"
+params.head_freq = ""
 params.head_bp = "BP"
 params.head_chr = "CHR"
 params.head_rs = "SNP"
 params.out = ""
 params.data = ""
-params.head_beta="BETA"
-params.head_se="SE"
+params.head_beta=""
+params.head_se=""
 params.head_A1="ALLELE1"
 params.head_A0="ALLELE0"
 
@@ -213,6 +213,7 @@ process ComputedReplication{
      file(gwas) from filegwas
      file(file_info) from fileinfogwas_rep
      file(haploblock) from ch_haploblocks
+   publishDir "${params.output_dir}/tmpfile/", overwrite:true, mode:'copy'
    output :
       file("${out}.clump.bypos") into clump_betweenpos
       file("${out}.clump.byrs") into res_byclump
@@ -247,8 +248,11 @@ process AnalyzeByClump{
     pvalgwascat =  (params.head_pval_gwascat!='') ? " --threshpval_gwascat ${params.threshold_pval_gwascat}   --pval_gwascat ${params.head_pval_gwascat}" : ""
     out=params.output+"_byclump.pdf"
     outxlxs=params.output+"_byclump.xlsx"
+    betagwascat= (params.head_beta!='') ? " --beta_gwas ${params.head_beta}" : ""
+    freqgwascat= (params.head_freq!='') ? " --af_gwas ${params.head_freq}" : ""
+    segwascat= (params.head_freq!='') ? " --se_gwas ${params.head_freq}" : ""
     """
-    launch_analyse_posgwascat_byclump.r --res_clump $file_res --chro_gwascat ${params.head_chro_gwascat} --bp_gwascat ${params.head_bp_gwascat} --gwas_cat $infogwas --gwas_file $gwas --chro_gwas ${params.head_chr}  --bp_gwas ${params.head_bp} --rs_gwas ${params.head_rs} $pvalgwascat --pval_gwas ${params.head_pval} --threshpval ${params.threshpval} --print_gwascat ${params.info_gwascat} --info_gene $geneinfo --haploblocks $haploblocks --clump $clump --size_win_kb ${params.size_win_kb} --rs_gwascat ${params.head_rs_gwascat} --a1_gwas ${params.head_A1} --a0_gwas ${params.head_A0}
+    launch_analyse_posgwascat_byclump.r --res_clump $file_res --chro_gwascat ${params.head_chro_gwascat} --bp_gwascat ${params.head_bp_gwascat} --gwas_cat $infogwas --gwas_file $gwas --chro_gwas ${params.head_chr}  --bp_gwas ${params.head_bp} --rs_gwas ${params.head_rs} $pvalgwascat --pval_gwas ${params.head_pval} --threshpval ${params.threshpval} --print_gwascat ${params.info_gwascat} --info_gene $geneinfo --haploblocks $haploblocks --clump $clump --size_win_kb ${params.size_win_kb} --rs_gwascat ${params.head_rs_gwascat} --a1_gwas ${params.head_A1} --a0_gwas ${params.head_A0}  $betagwascat $freqgwascat $segwascat
     mv analyse_posgwascat_byclump.pdf $out
     mv resume_tab.xlsx $outxlxs
     """
@@ -277,8 +281,11 @@ process AnalyzeByPos{
     pvalgwascat =  (params.head_pval_gwascat!='') ? " --threshpval_gwascat ${params.threshold_pval_gwascat}   --pval_gwascat ${params.head_pval_gwascat}" : ""
     out=params.output+"_bypos.pdf"
     outxlxs=params.output+"_bypos.xlsx"
+    betagwascat= (params.head_beta!='') ? " --beta_gwas ${params.head_beta}" : ""
+    freqgwascat= (params.head_freq!='') ? " --af_gwas ${params.head_freq}" : ""
+    segwascat= (params.head_freq!='') ? " --se_gwas ${params.head_freq}" : ""
     """
-    launch_analyse_posgwascat_bypos.r --chro_gwascat ${params.head_chro_gwascat} --bp_gwascat ${params.head_bp_gwascat} --gwas_cat $infogwas --gwas_file $gwas --chro_gwas ${params.head_chr}  --bp_gwas ${params.head_bp} --rs_gwas ${params.head_rs} $pvalgwascat --pval_gwas ${params.head_pval} --threshpval ${params.threshpval} --print_gwascat ${params.info_gwascat} --info_gene $geneinfo --haploblocks $haploblocks --clump $clump --size_win_kb ${params.size_win_kb}
+    launch_analyse_posgwascat_bypos.r --chro_gwascat ${params.head_chro_gwascat} --bp_gwascat ${params.head_bp_gwascat} --gwas_cat $infogwas --gwas_file $gwas --chro_gwas ${params.head_chr}  --bp_gwas ${params.head_bp} --rs_gwas ${params.head_rs} $pvalgwascat --pval_gwas ${params.head_pval} --threshpval ${params.threshpval} --print_gwascat ${params.info_gwascat} --info_gene $geneinfo --haploblocks $haploblocks --clump $clump --size_win_kb ${params.size_win_kb}  $betagwascat $freqgwascat $segwascat
     mv analyse_posgwascat_bypos.pdf $out
     mv resume_tab.xlsx $outxlxs
     """
@@ -301,10 +308,13 @@ process AnalyzeByBlock{
     file('figure/*')
   script :
     pvalgwascat =  (params.head_pval_gwascat!='') ? " --pval_gwascat ${params.head_pval_gwascat} --threshpval_gwascat ${params.threshold_pval_gwascat}" : ""
+    betagwascat= (params.head_beta!='') ? " --beta_gwas ${params.head_beta}" : ""
+    freqgwascat= (params.head_freq!='') ? " --af_gwas ${params.head_freq}" : ""
+    segwascat= (params.head_freq!='') ? " --se_gwas ${params.head_freq}" : ""
     out=params.output+"_byblock.pdf"
     outxlxs=params.output+"_byblock.xlsx"
     """
-    launch_analyse_posgwascat_byblock.r --res_block $file_res --chro_gwascat ${params.head_chro_gwascat} --bp_gwascat ${params.head_bp_gwascat} --gwas_cat $infogwas --gwas_file $gwas --chro_gwas ${params.head_chr}  --bp_gwas ${params.head_bp} --rs_gwas ${params.head_rs} $pvalgwascat --pval_gwas ${params.head_pval} --threshpval ${params.threshpval} --print_gwascat ${params.info_gwascat} --info_gene $geneinfo --haploblocks $haploblocks --clump $clump --size_win_kb ${params.size_win_kb} --rs_gwascat ${params.head_rs_gwascat} --a1_gwas ${params.head_A1} --a0_gwas ${params.head_A0}
+    launch_analyse_posgwascat_byblock.r --res_block $file_res --chro_gwascat ${params.head_chro_gwascat} --bp_gwascat ${params.head_bp_gwascat} --gwas_cat $infogwas --gwas_file $gwas --chro_gwas ${params.head_chr}  --bp_gwas ${params.head_bp} --rs_gwas ${params.head_rs} $pvalgwascat --pval_gwas ${params.head_pval} --threshpval ${params.threshpval} --print_gwascat ${params.info_gwascat} --info_gene $geneinfo --haploblocks $haploblocks --clump $clump --size_win_kb ${params.size_win_kb} --rs_gwascat ${params.head_rs_gwascat} --a1_gwas ${params.head_A1} --a0_gwas ${params.head_A0} $betagwascat $freqgwascat $segwascat
     mv analyse_posgwascat_byblock.pdf $out
     mv resume_tab.xlsx $outxlxs
     """

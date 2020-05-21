@@ -75,7 +75,7 @@ args = commandArgs(trailingOnly=TRUE)
 if(length(args)==0){
 #rsid	chr	bp	a1	a0	beta	se	p	freqA1	n
 opt=list(
-data_f1='/home/jeantristan/Data/DataGWASCKD/UACR/Format/Teumeretal2019/formatted_20180202-UACR_overall-AA-nstud_1-SumMac_400.rsid.format.awigen',
+data_f1='/home/jeantristan/Data/DataGWASCKD/eGFR/Format/MorrisEtAl2019/COGENT_Kidney_eGFR_trans_ethnic.format.awigen',
 chr_f1='chr',
 ps_f1='bp',
 beta_f1='beta',
@@ -119,14 +119,15 @@ Data2<-readfile(opt[['data_f2']], opt,grep('head_',grep('data_f2',grep('_f2',nam
 
 DataAll=merge(Data1,Data2, by.x=c('chr_f1', 'ps_f1'),  by.y=c('chr_f2', 'ps_f2'), all=T)
 
+DataAll$beta_f2_old<-DataAll$beta_f2
+balise<-!is.na(DataAll$a1_f1) & !is.na(DataAll$a1_f2) & DataAll$a1_f1!=DataAll$a1_f2
+if("af_f2" %in% names(DataAll) & "af_f1" %in% names(DataAll)){
 ## exchange b and af 
 DataAll$af_f2_old<-DataAll$af_f2
-DataAll$beta_f2_old<-DataAll$beta_f2
+DataAll$af_f2[balise]<- 1 - DataAll$af_f2_old[balise]
+}
 DataAll$a1_f2_old<-DataAll$a1_f2
 DataAll$a0_f2_old<-DataAll$a0_f2
-balise<-!is.na(DataAll$a1_f1) & !is.na(DataAll$a1_f2) & DataAll$a1_f1!=DataAll$a1_f2
-
-DataAll$af_f2[balise]<- 1 - DataAll$af_f2_old[balise]
 DataAll$beta_f2[balise]<- - DataAll$beta_f2_old[balise]
 DataAll$a1_f2[balise]<-DataAll$a0_f2_old[balise]
 DataAll$a0_f2[balise]<-DataAll$a1_f2_old[balise]
