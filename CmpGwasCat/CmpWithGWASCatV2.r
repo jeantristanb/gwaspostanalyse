@@ -120,34 +120,34 @@ Pheno="MDRDNoEth";ListMappedTrait<-grep('glomerular filtration rate', GwasCat$MA
 Pheno="CKDEPINoEth";ListMappedTrait<-grep('glomerular filtration rate', GwasCat$MAPPED_TRAIT,value=T)
 chrheadcat="Chro37";bpheadcat="PosBegin37"
 chrhead<-'chr';bphead='ps';betahead<-'beta';sehead='se';N=11000;a1head<-"allele1";a2head="allele0";afhead<-'af'
-File<-paste('/home/jeantristan/Travail/GWAS/GWAS_CKD/ImputedDataV3/Result/agesexhivdmhtnpcabmi/Res/',Pheno,'/',Pheno,'_All_agesexhivdmhtnpcabmi_20190120.imp.stat',sep="")
-DataCKDEPI<-GetDataWithGC(GwasCat, File, chrheadUACR, bphead,betahead,sehead,a1head, a2head,afhead,N, chrheadcat="Chro37", bpheadcat="PosBegin37", head='.ckdepi')
+File<-paste('/home/jeantristan/Travail/GWAS/GWAS_CKD/ImputedDataV4/Result/agesexhivdmhtnpcabmi/Res/',Pheno,'/',Pheno,'_All_agesexhivdmhtnpcabmi_20190120.imp.stat',sep="")
+DataCKDEPI<-GetDataWithGC(GwasCat, File, chrhead, bphead,betahead,sehead,a1head, a2head,afhead,N, chrheadcat="Chro37", bpheadcat="PosBegin37", head='.ckdepi')
 svg(paste('difffrequencies_gwasawigen_',Pheno,'.svg',sep=''))
-plotfreq(DataCKDEPI[!is.na(DataCKDEPI$af.ckdepi) & DataCKDEPI$Qc & DataCKDEPI$MAPPED_TRAIT %in% ListMappedTrait,],'af.ckdepi', 'risk.allele.af',xlab='Awigen frequencies', ylab='GWAS cat frequencies')
+plotfreq(DataCKDEPI[!is.na(DataCKDEPI$af.ckdepi) & DataCKDEPI$Qc & (DataCKDEPI$MAPPED_TRAIT %in% ListMappedTrait),],'af.ckdepi', 'risk.allele.af',xlab='Awigen frequencies', ylab='GWAS cat frequencies')
 dev.off()
 svg(paste('diffZ_gwasawigen_',Pheno,'.svg',sep=''))
-plotZ(DataCKDEPI[!is.na(DataCKDEPI$af.ckdepi) & DataCKDEPI$Qc & DataCKDEPI$MAPPED_TRAIT %in% ListMappedTrait,],"Z.gwascat", "Z.ckdepi", xlab='Z (GWAS cat)', ylab='Z (AWIGEN)')
+plotZ(DataCKDEPI[!is.na(DataCKDEPI$af.ckdepi) & DataCKDEPI$Qc & (DataCKDEPI$MAPPED_TRAIT %in% ListMappedTrait),],"Z.gwascat", "Z.ckdepi", xlab='Z (GWAS cat)', ylab='Z (AWIGEN)')
 dev.off()
 
 svg(paste('diffh2_gwasawigen_',Pheno,'.svg',sep=''))
-plotZ(DataCKDEPI[!is.na(DataCKDEPI$af.ckdepi) & DataCKDEPI$Qc & DataCKDEPI$MAPPED_TRAIT %in% ListMappedTrait,],"h2.cat", "h2.ckdepi", xlab='h2 (GWAS cat)', ylab='h2 (AWIGEN)')
+plotZ(DataCKDEPI[!is.na(DataCKDEPI$af.ckdepi) & DataCKDEPI$Qc & (DataCKDEPI$MAPPED_TRAIT %in% ListMappedTrait),],"h2.cat", "h2.ckdepi", xlab='h2 (GWAS cat)', ylab='h2 (AWIGEN)')
 dev.off()
 
 Pheno="LogNewAcr";ListMappedTraitUACR<-unique(grep('albumin', GwasCat$MAPPED_TRAIT,value=T));ListMappedTraitUACR<-ListMappedTrait[ListMappedTrait!='serum non-albumin protein measurement']
-File<-paste('/home/jeantristan/Travail/GWAS/GWAS_CKD/ImputedDataV3/Result/agesexhivdmhtnpcabmi/Res/',Pheno,'/',Pheno,'_All_agesexhivdmhtnpcabmi_20190120.imp.stat',sep="")
+File<-paste('/home/jeantristan/Travail/GWAS/GWAS_CKD/ImputedDataV4/Result/agesexhivdmhtnpcabmi/Res/',Pheno,'/',Pheno,'_All_agesexhivdmhtnpcabmi_20190120.imp.stat',sep="")
 DataUacr<-GetDataWithGC(GwasCat, File, chrhead, bphead,betahead,sehead,a1head, a2head,afhead,N, chrheadcat="Chro37", bpheadcat="PosBegin37",head='.uacr')
 
 
 svg(paste('difffrequencies_gwasawigen_',Pheno,'.svg',sep=''))
-plotfreq(DataUacr[DataUacr$Qc & DataUacr$MAPPED_TRAIT %in% ListMappedTraitUACR,],'af.uacr', 'risk.allele.af',xlab='Awigen frequencies', ylab='GWAS cat frequencies')
+plotfreq(DataUacr[DataUacr$Qc & (DataUacr$MAPPED_TRAIT %in% ListMappedTraitUACR),],'af.uacr', 'risk.allele.af',xlab='Awigen frequencies', ylab='GWAS cat frequencies')
 dev.off()
 
 svg(paste('diffh2_gwasawigen_',Pheno,'.svg',sep=''))
-plotZ(DataUacr[!is.na(DataUacr$af.uacr) & DataUacr$Qc & DataUacr$MAPPED_TRAIT %in% ListMappedTraitUACR,],"h2.cat", "h2.uacr", xlab='h2 (GWAS cat)', ylab='h2 (AWIGEN)')
+plotZ(DataUacr[!is.na(DataUacr$af.uacr) & DataUacr$Qc & (DataUacr$MAPPED_TRAIT %in% ListMappedTraitUACR),],"h2.cat", "h2.uacr", xlab='h2 (GWAS cat)', ylab='h2 (AWIGEN)')
 dev.off()
 
 svg(paste('diffZ_gwasawigen_',Pheno,'.svg',sep=''))
-plotZ(DataUacr[!is.na(DataUacr$af.uacr) & DataUacr$Qc & DataUacr$MAPPED_TRAIT %in% ListMappedTraitUACR,],"Z.gwascat", "Z.uacr", xlab='Z (GWAS cat)', ylab='Z (AWIGEN)')
+plotZ(DataUacr[!is.na(DataUacr$af.uacr) & DataUacr$Qc & (DataUacr$MAPPED_TRAIT %in% ListMappedTraitUACR),],"Z.gwascat", "Z.uacr", xlab='Z (GWAS cat)', ylab='Z (AWIGEN)')
 dev.off()
 
 
