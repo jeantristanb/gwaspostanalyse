@@ -250,7 +250,7 @@ process AnalyzeByClump{
     outxlxs=params.output+"_byclump.xlsx"
     betagwascat= (params.head_beta!='') ? " --beta_gwas ${params.head_beta}" : ""
     freqgwascat= (params.head_freq!='') ? " --af_gwas ${params.head_freq}" : ""
-    segwascat= (params.head_freq!='') ? " --se_gwas ${params.head_freq}" : ""
+    segwascat= (params.head_freq!='') ? " --se_gwas ${params.head_se}" : ""
     """
     launch_analyse_posgwascat_byclump.r --res_clump $file_res --chro_gwascat ${params.head_chro_gwascat} --bp_gwascat ${params.head_bp_gwascat} --gwas_cat $infogwas --gwas_file $gwas --chro_gwas ${params.head_chr}  --bp_gwas ${params.head_bp} --rs_gwas ${params.head_rs} $pvalgwascat --pval_gwas ${params.head_pval} --threshpval ${params.threshpval} --print_gwascat ${params.info_gwascat} --info_gene $geneinfo --haploblocks $haploblocks --clump $clump --size_win_kb ${params.size_win_kb} --rs_gwascat ${params.head_rs_gwascat} --a1_gwas ${params.head_A1} --a0_gwas ${params.head_A0}  $betagwascat $freqgwascat $segwascat
     mv analyse_posgwascat_byclump.pdf $out
@@ -283,7 +283,7 @@ process AnalyzeByPos{
     outxlxs=params.output+"_bypos.xlsx"
     betagwascat= (params.head_beta!='') ? " --beta_gwas ${params.head_beta}" : ""
     freqgwascat= (params.head_freq!='') ? " --af_gwas ${params.head_freq}" : ""
-    segwascat= (params.head_freq!='') ? " --se_gwas ${params.head_freq}" : ""
+    segwascat= (params.head_freq!='') ? " --se_gwas ${params.head_se}" : ""
     """
     launch_analyse_posgwascat_bypos.r --chro_gwascat ${params.head_chro_gwascat} --bp_gwascat ${params.head_bp_gwascat} --gwas_cat $infogwas --gwas_file $gwas --chro_gwas ${params.head_chr}  --bp_gwas ${params.head_bp} --rs_gwas ${params.head_rs} $pvalgwascat --pval_gwas ${params.head_pval} --threshpval ${params.threshpval} --print_gwascat ${params.info_gwascat} --info_gene $geneinfo --haploblocks $haploblocks --clump $clump --size_win_kb ${params.size_win_kb}  $betagwascat $freqgwascat $segwascat
     mv analyse_posgwascat_bypos.pdf $out
@@ -310,7 +310,7 @@ process AnalyzeByBlock{
     pvalgwascat =  (params.head_pval_gwascat!='') ? " --pval_gwascat ${params.head_pval_gwascat} --threshpval_gwascat ${params.threshold_pval_gwascat}" : ""
     betagwascat= (params.head_beta!='') ? " --beta_gwas ${params.head_beta}" : ""
     freqgwascat= (params.head_freq!='') ? " --af_gwas ${params.head_freq}" : ""
-    segwascat= (params.head_freq!='') ? " --se_gwas ${params.head_freq}" : ""
+    segwascat= (params.head_freq!='') ? " --se_gwas ${params.head_se}" : ""
     out=params.output+"_byblock.pdf"
     outxlxs=params.output+"_byblock.xlsx"
     """

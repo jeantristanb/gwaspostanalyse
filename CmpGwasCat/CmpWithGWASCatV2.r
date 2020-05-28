@@ -133,7 +133,7 @@ svg(paste('diffh2_gwasawigen_',Pheno,'.svg',sep=''))
 plotZ(DataCKDEPI[!is.na(DataCKDEPI$af.ckdepi) & DataCKDEPI$Qc & (DataCKDEPI$MAPPED_TRAIT %in% ListMappedTrait),],"h2.cat", "h2.ckdepi", xlab='h2 (GWAS cat)', ylab='h2 (AWIGEN)')
 dev.off()
 
-Pheno="LogNewAcr";ListMappedTraitUACR<-unique(grep('albumin', GwasCat$MAPPED_TRAIT,value=T));ListMappedTraitUACR<-ListMappedTrait[ListMappedTrait!='serum non-albumin protein measurement']
+Pheno="LogNewAcr";ListMappedTraitUACR<-unique(grep('albumin', GwasCat$MAPPED_TRAIT,value=T));ListMappedTraitUACR<-ListMappedTraitUACR[ListMappedTraitUACR!='serum non-albumin protein measurement']
 File<-paste('/home/jeantristan/Travail/GWAS/GWAS_CKD/ImputedDataV4/Result/agesexhivdmhtnpcabmi/Res/',Pheno,'/',Pheno,'_All_agesexhivdmhtnpcabmi_20190120.imp.stat',sep="")
 DataUacr<-GetDataWithGC(GwasCat, File, chrhead, bphead,betahead,sehead,a1head, a2head,afhead,N, chrheadcat="Chro37", bpheadcat="PosBegin37",head='.uacr')
 
