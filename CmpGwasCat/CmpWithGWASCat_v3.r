@@ -1,4 +1,5 @@
 library(data.table)
+library(graphics)
 library("optparse")
 
 computedher<-function(beta, se, af,N){
@@ -62,7 +63,7 @@ GetDataWithGC<-function(GwasCat, File, chrhead, bphead,betahead,sehead,a1head, a
 require(data.table)
 DataGWAS<-fread(File)
 DataGWAS[["ChrPos"]]<-paste(DataGWAS[[chrhead]],DataGWAS[[bphead]])
-GwasCat[,'ChrPos']<-paste(GwasCat[,"Chro37"], GwasCat[,"PosBegin37"])
+GwasCat[,'ChrPos']<-paste(GwasCat[,chrheadcat], GwasCat[,bpheadcat])
 DataGWAS<-as.data.frame(DataGWAS[DataGWAS[['ChrPos']] %in% as.character(GwasCat[,'ChrPos'])])
 GwasCatData<-merge(DataGWAS,GwasCat, by="ChrPos", all=T)
 GwasCatData$Qc<-GwasCatData$Qc & !is.na(GwasCatData[,a1head]) & (GwasCatData[,a1head]==GwasCatData$risk.allele.cat | GwasCatData[,a2head]==GwasCatData$risk.allele.cat)
@@ -78,8 +79,13 @@ GwasCatData$upper.cat.old<- GwasCatData$upper.cat
 GwasCatData$lower.cat.old<- GwasCatData$lower.cat
 GwasCatData$lower.cat[BaliseChange]<- -GwasCatData$upper.cat.old[BaliseChange]
 GwasCatData$upper.cat[BaliseChange]<- -GwasCatData$lower.cat.old[BaliseChange]
+if(!is.null(betahead) & !is.null(sehead) & !is.null(afhead)){
 GwasCatData$h2<-computedher(GwasCatData[,betahead], GwasCatData[,sehead], GwasCatData[,afhead],rep(N, nrow(GwasCatData)))
 GwasCatData$Z<-GwasCatData[,betahead]/GwasCatData[,sehead]
+}else{
+GwasCatData$h2<-NA
+GwasCatData$Z<-NA
+}
 #names(DataGWAS)[!(names(DataGWAS) %in% ChrPos)]<-paste(names(DataGWAS)[!(names(DataGWAS) %in% ChrPos)])
 names(GwasCatData)[names(GwasCatData) %in% c(names(DataGWAS),'h2','Z')]<-paste(names(GwasCatData)[names(GwasCatData) %in% c(names(DataGWAS),'h2','Z')], head,sep='')
 return(GwasCatData[,grep(".old",names(GwasCatData),invert=T,value=T)])
@@ -94,12 +100,45 @@ ht<-hist(dataall[,freq1], nbcat, plot=F)
 ht$counts<-ht$counts/sum(ht$counts)*height
 ht2<-hist(dataall[,freq2], nbcat, plot=F)
 ht2$counts<-ht2$counts/sum(ht2$counts)*height
+#points(dataall[,freq1], dataall[,freq2], pch=22, bg=t_col("blue") ,col=t_col("blue"), cex=0.5)
+points(dataall[,freq1], dataall[,freq2], pch=22, ,col=t_col("blue",90), cex=0.2)
 rect(rep(0,length(ht2$counts)),(1:length(ht2$counts))/nbcat,
            ht2$counts,(1:length(ht2$counts))/nbcat+1/nbcat, col=t_col('red', perctrans), bg=t_col('red', perctrans))
 plot(ht, add=T, col=t_col("orange"))
-points(dataall[,freq1], dataall[,freq2], pch=22, bg=t_col("blue") ,col=t_col("blue"), cex=0.5)
 abline(a=0,b=1, lty=2 ,col=t_col('red'), lwd=2)
 }
+
+#dataall<-DataInfo[!is.na(DataInfo[,headfreq]) & DataInfo$Qc,];freq1<-headfreq;freq2<-'risk.allele.af';xlab="";ylab=""
+
+plotfreq<-function(dataall,freq1, freq2,xlab='Awigen frequencies', ylab='GWAS cat frequencies'){
+nbcat=20
+height=1
+perctrans<-90
+ht<-hist(dataall[,freq1], nbcat, plot=F)
+ht$counts<-ht$counts/sum(ht$counts)*height
+ht2<-hist(dataall[,freq2], nbcat, plot=F)
+ht2$counts<-ht2$counts/sum(ht2$counts)*height
+layout.matrix <- matrix(c(2, 1, 0, 3), nrow = 2, ncol = 2)
+
+layout(mat = layout.matrix,
+       heights = c(max(ht$counts)*1.2, 1), # Heights of the two rows
+       widths = c(2, max(ht2$counts)*2.4)) # Widths of the two columns
+#layout.show(3)
+
+#c(bottom, left, top, right)
+par(mar=c(5, 4, 1, 1))
+plot(c(0,1), c(0,1), type='n', cex=0.5, xlab=xlab, ylab=ylab, xlim=c(0,1), ylim=c(0,1), bty='n')
+points(dataall[,freq1], dataall[,freq2], pch=22, ,col=t_col("blue",95), cex=0.15)
+abline(a=0,b=1, lty=2 ,col=t_col('red'), lwd=2)
+par(mar=c(0,4,1,0))
+plot(ht, col=t_col("orange"), xlab="", ylab="", xlim=c(0,1),  xaxt='n',main="")
+par(mar=c(5,0,1,1))
+plot(c(0, max(ht2$counts)), c(0,1), type='n', cex=0.5, xlab='', ylab='', xlim=c(0,max(ht2$counts)), ylim=c(0,1), yaxt='n',bty='n')
+rect(rep(0,length(ht2$counts)),(1:length(ht2$counts))/nbcat,
+           ht2$counts,(1:length(ht2$counts))/nbcat-1/nbcat, col=t_col('red', perctrans), bg=t_col('red', perctrans))
+}
+
+
 
 plotZ<-function(dataall,Z1, Z2, xlab='Z (GWAS cat)', ylab='Z (AWIGEN)'){
 r2<-cor(dataall[,Z1],dataall[,Z2], method='spearman')
@@ -110,7 +149,6 @@ abline(h=0, col='red', lty=2)
 abline(v=0, col='red', lty=2)
 }
 
-args = commandArgs(trailingOnly=TRUE)
 option_list = list(
   make_option(c("--gwascat"), type="character", default=NULL, 
               help="gwas catalog input", metavar="character"),
@@ -134,62 +172,68 @@ option_list = list(
               help="gwas catalog input", metavar="character"),
   make_option(c("--gc_bp"), type="character", default=NULL, 
               help="gwas catalog input", metavar="character"),
-  make_option(c("--out"), type="character", default="out.txt", 
+  make_option(c("--head"), type="character", default="", 
+              help="head", metavar="character"),
+  make_option(c("--out"), type="character", default="out", 
               help="output file name [default= %default]", metavar="character")
 ); 
 
 
 args = commandArgs(trailingOnly=TRUE)
-if(length(args)>0){
-GwasCatI<-read.table('~/Data/GWASCat/GWASCat_27_March_2020_ckd.tsv', header=T, sep='\t', stringsAsFactors=F)
-GwasCatI<-read.table(args[1], header=T, sep='\t', stringsAsFactors=F)
-Pheno="MDRDNoEth";ListMappedTrait<-grep('glomerular filtration rate', GwasCat$MAPPED_TRAIT,value=T)
-Pheno="CKDEPINoEth";ListMappedTrait<-grep('glomerular filtration rate', GwasCat$MAPPED_TRAIT,value=T)
+if(length(args)==0){
+GwasCatI<-read.table('~/Data/GWASCat/GWASCat_27_March_2020.tsv', header=T, sep='\t', stringsAsFactors=F)
+File='Afr_GC_1000G_form.freq'
 chrheadcat="Chro37";bpheadcat="PosBegin37"
-chrhead<-'chr';bphead='ps';betahead<-'beta';sehead='se';N=11000;a1head<-"allele1";a2head="allele0";afhead<-'af'
-File<-paste('/home/jeantristan/Travail/GWAS/GWAS_CKD/ImputedDataV4/Result/agesexhivdmhtnpcabmi/Res/',Pheno,'/',Pheno,'_All_agesexhivdmhtnpcabmi_20190120.imp.stat',sep="")
+#chrhead<-'chr';bphead='ps';betahead<-'beta';sehead='se';N=11000;a1head<-"allele1";a2head="allele0";afhead<-'af'
+chrhead<-'CHR';bphead='BP';betahead<-NULL;sehead=NULL;N=NULL;a1head<-"A1";a2head="A2";afhead<-'MAF'
+headout=""
+Out='test'
 }else{
 opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
+cat(opt[['gwascat']])
 GwasCatI<-read.table(opt[['gwascat']], header=T, sep='\t', stringsAsFactors=F)
-File<-opt[['info']];chrheadcat=opt[['cat_chro']];bpheadcat=opt[['cat_bp']]
-chrhead<-opt[['in_chr']];bphead=opt[['in_bp']];betahead<-opt[['in_beta']];sehead=opt[['in_se']];N=11000;a1head<-opt[['in_a1']];a2head=opt[['in_a2']];afhead<-opt[['in_af']]
+File<-opt[['info']];chrheadcat=opt[['gc_chr']];bpheadcat=opt[['gc_bp']]
+chrhead<-opt[['in_chr']];bphead=opt[['in_bp']];betahead<-opt[['in_beta']];sehead=opt[['in_se']];N=11000;a1head<-opt[['in_a1']];a2head=opt[['in_a2']];afhead<-opt[['in_af']];headout=opt[['head']]
+Out=opt[['out']]
 }
-GwasCat<-transform_gwascat(GwasCatI, chrheadcat="Chro37", bpheadcat="PosBegin37")
+GwasCat<-transform_gwascat(GwasCatI, chrheadcat,bpheadcat)
 GwasCat$PosCat<-1:nrow(GwasCat)
-DataCKDEPI<-GetDataWithGC(GwasCat, File, chrhead, bphead,betahead,sehead,a1head, a2head,afhead,N, chrheadcat="Chro37", bpheadcat="PosBegin37", head='.ckdepi')
-svg(paste('difffrequencies_gwasawigen_',Pheno,'.svg',sep=''))
-plotfreq(DataCKDEPI[!is.na(DataCKDEPI$af.ckdepi) & DataCKDEPI$Qc & (DataCKDEPI$MAPPED_TRAIT %in% ListMappedTrait),],'af.ckdepi', 'risk.allele.af',xlab='Awigen frequencies', ylab='GWAS cat frequencies')
+
+## data 
+DataInfo<-GetDataWithGC(GwasCat,File, chrhead, bphead,betahead,sehead,a1head, a2head,afhead,N,chrheadcat= chrheadcat, bpheadcat=bpheadcat, head="")
+svg(paste(Out,'_cmpfreq.svg',sep=''))
+plotfreq(DataInfo[!is.na(DataInfo[,afhead]) & DataInfo$Qc,],afhead, 'risk.allele.af',xlab=headout, ylab='GWAS Catalog')
 dev.off()
-svg(paste('diffZ_gwasawigen_',Pheno,'.svg',sep=''))
-plotZ(DataCKDEPI[!is.na(DataCKDEPI$af.ckdepi) & DataCKDEPI$Qc & (DataCKDEPI$MAPPED_TRAIT %in% ListMappedTrait),],"Z.gwascat", "Z.ckdepi", xlab='Z (GWAS cat)', ylab='Z (AWIGEN)')
-dev.off()
-
-svg(paste('diffh2_gwasawigen_',Pheno,'.svg',sep=''))
-plotZ(DataCKDEPI[!is.na(DataCKDEPI$af.ckdepi) & DataCKDEPI$Qc & (DataCKDEPI$MAPPED_TRAIT %in% ListMappedTrait),],"h2.cat", "h2.ckdepi", xlab='h2 (GWAS cat)', ylab='h2 (AWIGEN)')
-dev.off()
-
-Pheno="LogNewAcr";ListMappedTraitUACR<-unique(grep('albumin', GwasCat$MAPPED_TRAIT,value=T));ListMappedTraitUACR<-ListMappedTraitUACR[ListMappedTraitUACR!='serum non-albumin protein measurement']
-File<-paste('/home/jeantristan/Travail/GWAS/GWAS_CKD/ImputedDataV4/Result/agesexhivdmhtnpcabmi/Res/',Pheno,'/',Pheno,'_All_agesexhivdmhtnpcabmi_20190120.imp.stat',sep="")
-DataUacr<-GetDataWithGC(GwasCat, File, chrhead, bphead,betahead,sehead,a1head, a2head,afhead,N, chrheadcat="Chro37", bpheadcat="PosBegin37",head='.uacr')
-
-
-svg(paste('difffrequencies_gwasawigen_',Pheno,'.svg',sep=''))
-plotfreq(DataUacr[DataUacr$Qc & (DataUacr$MAPPED_TRAIT %in% ListMappedTraitUACR),],'af.uacr', 'risk.allele.af',xlab='Awigen frequencies', ylab='GWAS cat frequencies')
-dev.off()
-
-svg(paste('diffh2_gwasawigen_',Pheno,'.svg',sep=''))
-plotZ(DataUacr[!is.na(DataUacr$af.uacr) & DataUacr$Qc & (DataUacr$MAPPED_TRAIT %in% ListMappedTraitUACR),],"h2.cat", "h2.uacr", xlab='h2 (GWAS cat)', ylab='h2 (AWIGEN)')
-dev.off()
-
-svg(paste('diffZ_gwasawigen_',Pheno,'.svg',sep=''))
-plotZ(DataUacr[!is.na(DataUacr$af.uacr) & DataUacr$Qc & (DataUacr$MAPPED_TRAIT %in% ListMappedTraitUACR),],"Z.gwascat", "Z.uacr", xlab='Z (GWAS cat)', ylab='Z (AWIGEN)')
-dev.off()
-
-
-All<-merge(DataCKDEPI, DataUacr[,c('PosCat', grep('uacr',names(DataUacr), value=T))], by='PosCat')
-All$Use<-'NoPASS'
-All$Use[!is.na(All$af.uacr) & All$Qc]<-'Other'
-All$Use[!is.na(All$af.uacr) & All$MAPPED_TRAIT %in% ListMappedTraitUACR]<-'UACR'
-All$Use[!is.na(All$af.uacr) & All$MAPPED_TRAIT %in% ListMappedTrait]<-'eGFR'
-write.csv(All, row.names=F, file='resumeall.csv')
+#svg(paste('diffZ_gwasawigen_',Pheno,'.svg',sep=''))
+#plotZ(DataCKDEPI[!is.na(DataCKDEPI$af.ckdepi) & DataCKDEPI$Qc & (DataCKDEPI$MAPPED_TRAIT %in% ListMappedTrait),],"Z.gwascat", "Z.ckdepi", xlab='Z (GWAS cat)', ylab='Z (AWIGEN)')
+#dev.off()
+#
+#svg(paste('diffh2_gwasawigen_',Pheno,'.svg',sep=''))
+#plotZ(DataCKDEPI[!is.na(DataCKDEPI$af.ckdepi) & DataCKDEPI$Qc & (DataCKDEPI$MAPPED_TRAIT %in% ListMappedTrait),],"h2.cat", "h2.ckdepi", xlab='h2 (GWAS cat)', ylab='h2 (AWIGEN)')
+#dev.off()
+#
+#Pheno="LogNewAcr";ListMappedTraitUACR<-unique(grep('albumin', GwasCat$MAPPED_TRAIT,value=T));ListMappedTraitUACR<-ListMappedTraitUACR[ListMappedTraitUACR!='serum non-albumin protein measurement']
+#File<-paste('/home/jeantristan/Travail/GWAS/GWAS_CKD/ImputedDataV4/Result/agesexhivdmhtnpcabmi/Res/',Pheno,'/',Pheno,'_All_agesexhivdmhtnpcabmi_20190120.imp.stat',sep="")
+#DataUacr<-GetDataWithGC(GwasCat, File, chrhead, bphead,betahead,sehead,a1head, a2head,afhead,N, chrheadcat="Chro37", bpheadcat="PosBegin37",head='.uacr')
+#
+#
+#svg(paste('difffrequencies_gwasawigen_',Pheno,'.svg',sep=''))
+#plotfreq(DataUacr[DataUacr$Qc & (DataUacr$MAPPED_TRAIT %in% ListMappedTraitUACR),],'af.uacr', 'risk.allele.af',xlab='Awigen frequencies', ylab='GWAS cat frequencies')
+#dev.off()
+#
+#svg(paste('diffh2_gwasawigen_',Pheno,'.svg',sep=''))
+#plotZ(DataUacr[!is.na(DataUacr$af.uacr) & DataUacr$Qc & (DataUacr$MAPPED_TRAIT %in% ListMappedTraitUACR),],"h2.cat", "h2.uacr", xlab='h2 (GWAS cat)', ylab='h2 (AWIGEN)')
+#dev.off()
+#
+#svg(paste('diffZ_gwasawigen_',Pheno,'.svg',sep=''))
+#plotZ(DataUacr[!is.na(DataUacr$af.uacr) & DataUacr$Qc & (DataUacr$MAPPED_TRAIT %in% ListMappedTraitUACR),],"Z.gwascat", "Z.uacr", xlab='Z (GWAS cat)', ylab='Z (AWIGEN)')
+#dev.off()
+#
+#
+#All<-merge(DataCKDEPI, DataUacr[,c('PosCat', grep('uacr',names(DataUacr), value=T))], by='PosCat')
+#All$Use<-'NoPASS'
+#All$Use[!is.na(All$af.uacr) & All$Qc]<-'Other'
+#All$Use[!is.na(All$af.uacr) & All$MAPPED_TRAIT %in% ListMappedTraitUACR]<-'UACR'
+#All$Use[!is.na(All$af.uacr) & All$MAPPED_TRAIT %in% ListMappedTrait]<-'eGFR'
+#write.csv(All, row.names=F, file='resumeall.csv')
