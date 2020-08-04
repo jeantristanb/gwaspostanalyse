@@ -1,4 +1,5 @@
 library(data.table)
+library("optparse")
 
 computedher<-function(beta, se, af,N){
 #https://journals.plos.org/plosone/article/file?type=supplementary&id=info:doi/10.1371/journal.pone.0120758.s001
@@ -31,7 +32,7 @@ t.col <- rgb(rgb.val[1], rgb.val[2], rgb.val[3],
 invisible(t.col)
 }
 
-transform_gwascat<-function(GwasCat){
+transform_gwascat<-function(GwasCat, chrheadcat, bpheadcat){
 NamesGWAS<-names(GwasCat)
 GwasCat$risk.allele.cat<-sapply(strsplit(as.character(GwasCat$STRONGEST.SNP.RISK.ALLELE),split='-'), function(x)return(x[2]))
 GwasCat$risk.allele.af<-as.numeric( GwasCat$RISK.ALLELE.FREQUENCY)
@@ -109,17 +110,53 @@ abline(h=0, col='red', lty=2)
 abline(v=0, col='red', lty=2)
 }
 
+args = commandArgs(trailingOnly=TRUE)
+option_list = list(
+  make_option(c("--gwascat"), type="character", default=NULL, 
+              help="gwas catalog input", metavar="character"),
+  make_option(c("--gc_chr"), type="character", default=NULL, 
+              help="gwas catalog input", metavar="character"),
+  make_option(c("--info"), type="character", default=NULL, 
+              help="gwas catalog input", metavar="character"),
+  make_option(c("--in_bp"), type="character", default=NULL, 
+              help="gwas catalog input", metavar="character"),
+  make_option(c("--in_chr"), type="character", default=NULL, 
+              help="gwas catalog input", metavar="character"),
+  make_option(c("--in_af"), type="character", default=NULL, 
+              help="gwas catalog input", metavar="character"),
+  make_option(c("--in_beta"), type="character", default=NULL, 
+              help="gwas catalog input", metavar="character"),
+  make_option(c("--in_se"), type="character", default=NULL, 
+              help="gwas catalog input", metavar="character"),
+  make_option(c("--in_a1"), type="character", default=NULL, 
+              help="gwas catalog input", metavar="character"),
+  make_option(c("--in_a2"), type="character", default=NULL, 
+              help="gwas catalog input", metavar="character"),
+  make_option(c("--gc_bp"), type="character", default=NULL, 
+              help="gwas catalog input", metavar="character"),
+  make_option(c("--out"), type="character", default="out.txt", 
+              help="output file name [default= %default]", metavar="character")
+); 
 
 
+args = commandArgs(trailingOnly=TRUE)
+if(length(args)>0){
 GwasCatI<-read.table('~/Data/GWASCat/GWASCat_27_March_2020_ckd.tsv', header=T, sep='\t', stringsAsFactors=F)
-GwasCat<-transform_gwascat(GwasCatI)
-GwasCat$PosCat<-1:nrow(GwasCat)
-
+GwasCatI<-read.table(args[1], header=T, sep='\t', stringsAsFactors=F)
 Pheno="MDRDNoEth";ListMappedTrait<-grep('glomerular filtration rate', GwasCat$MAPPED_TRAIT,value=T)
 Pheno="CKDEPINoEth";ListMappedTrait<-grep('glomerular filtration rate', GwasCat$MAPPED_TRAIT,value=T)
 chrheadcat="Chro37";bpheadcat="PosBegin37"
 chrhead<-'chr';bphead='ps';betahead<-'beta';sehead='se';N=11000;a1head<-"allele1";a2head="allele0";afhead<-'af'
 File<-paste('/home/jeantristan/Travail/GWAS/GWAS_CKD/ImputedDataV4/Result/agesexhivdmhtnpcabmi/Res/',Pheno,'/',Pheno,'_All_agesexhivdmhtnpcabmi_20190120.imp.stat',sep="")
+}else{
+opt_parser = OptionParser(option_list=option_list);
+opt = parse_args(opt_parser);
+GwasCatI<-read.table(opt[['gwascat']], header=T, sep='\t', stringsAsFactors=F)
+File<-opt[['info']];chrheadcat=opt[['cat_chro']];bpheadcat=opt[['cat_bp']]
+chrhead<-opt[['in_chr']];bphead=opt[['in_bp']];betahead<-opt[['in_beta']];sehead=opt[['in_se']];N=11000;a1head<-opt[['in_a1']];a2head=opt[['in_a2']];afhead<-opt[['in_af']]
+}
+GwasCat<-transform_gwascat(GwasCatI, chrheadcat="Chro37", bpheadcat="PosBegin37")
+GwasCat$PosCat<-1:nrow(GwasCat)
 DataCKDEPI<-GetDataWithGC(GwasCat, File, chrhead, bphead,betahead,sehead,a1head, a2head,afhead,N, chrheadcat="Chro37", bpheadcat="PosBegin37", head='.ckdepi')
 svg(paste('difffrequencies_gwasawigen_',Pheno,'.svg',sep=''))
 plotfreq(DataCKDEPI[!is.na(DataCKDEPI$af.ckdepi) & DataCKDEPI$Qc & (DataCKDEPI$MAPPED_TRAIT %in% ListMappedTrait),],'af.ckdepi', 'risk.allele.af',xlab='Awigen frequencies', ylab='GWAS cat frequencies')
