@@ -139,7 +139,6 @@ kable(DataAllWithInfo2,"latex",caption=paste("significant pvalue found in gwas c
 
 
 <<plotwindbonf,  comment=NA, results = 'asis', echo=FALSE, fig.cap = "QQplot of pvalue of gwas result found in gwas catalog",fig.pos="H", fig.width=4, fig.height=4>>=
-#PlotWindLocusZoom(Chro,BeginBlock, EndBlock, WindSize,DataGWAS, ChroGW,PosGW, RsGW,PvalGW,DataGC, DataClump, ListRs, DataGene,ChroGE, BeginGE, EndGE, NameGene)
 DataAllWithInfoBonf<-DataAllWithInfo[DataAllWithInfo$p.adjust.bonf<=LimPval, names(DataAllWithInfo)!='Wind']
 DataAllWithInfoBonf<-DataAllWithInfoBonf[order(DataAllWithInfoBonf[,'CHR'],DataAllWithInfoBonf[,'BP']),]
 
@@ -164,6 +163,7 @@ FigName=paste(DirFig,'/',infosig[,'CHR'],'_',infosig$BP,'.pdf',sep="")
 pdf(FigName,width=7*1.25, height=7)
 #Bloc<-DataHaplo[DataHaplo$CHR==infosig[,CHRGW]& DataHaplo$BPI1<=infosig[,PosGW] & DataHaplo$BPI2>=infosig[,PosGW],]
 #if(Cmt==1)DataPclumpMin<-data.frame(Wind=Wind,MinPClump=PClump,MinPRsClump=Rslump, MinAfClump=AfClump, MinBetaClump=BetaClump, MinA1Clump=A1Clump, MinA0Clump=A0Clump, MinSeClump=SeClump, PClump=PWClump)
+#PlotWindLocusZoom(Chro,BeginBlock, EndBlock, WindSize,DataGWAS, ChroGW,PosGW, RsGW,PvalGW,DataGC, DataClump, ListRs, DataGene,ChroGE, BeginGE, EndGE, NameGene)
 PlotWindLocusZoom(infosig[,'CHR'],infosig$BP, infosig$BP, SizeWind,DataGWAS, ChroGW,PosGW, RsGW,PvalGW,DataGC, ChroGC, PosGC,DataClump, infosig[,'MinPRsClump'], DataGene,ChroGE, BeginGE, EndGE, NameGene, DataHaplo)
 dev.off()
 LatexOut=c(LatexOut,paste(paste(infosig[,'CHR'],infosig$BP, sep=':'),"&\\includegraphics[scale=0.33]{",FigName,"} \\\\",sep=""))

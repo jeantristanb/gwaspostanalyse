@@ -150,8 +150,10 @@ if(balfreq){
 Data<-Data[!is.na(Data[[headpval]]) & !is.na(Data[[headfreq]]) & Data[[headfreq]]>maf & Data[[headfreq]]<(1-maf),]
 }
 listres[[Trait]]=Data[[headpval]]
-lbdaa<-estlambda(listres[[Trait]])
-tmpdf<-data.frame(var=Trait,file=InfoRed[Cmt,2],estimate=lbdaa$estimate, se=lbdaa$se)
+#lbdaa<-estlambda(listres[[Trait]][,headpval])
+lbdaareg<-estlambda(listres[[Trait]])
+lbdaamedi<-median(qchisq(listres[[Trait]], df=1, lower.tail=FALSE)) / qchisq(0.5, 1)
+tmpdf<-data.frame(var=Trait,file=InfoRed[Cmt,2],lb_estreg=lbdaareg$estimate, ld_sereg=lbdaareg$se, lb_estmed=lbdaamedi)
 if(Cmt==1)lamda<-tmpdf
 else lamda<-rbind(lamda,tmpdf)
 Cmt<-Cmt+1
@@ -163,7 +165,4 @@ qqunif.plot(listres,  aspect = "fill")
 dev.off()
 write.csv(lamda, row.names=F, file=paste(outplot, 'csv',sep='.'))
 
-#ylab = expression(Observed ~ ~-log[10](italic(p)))
-#xlab = expression(Expected ~ ~-log[10](italic(p)))
-#abline(0, 1, col = "red")
 

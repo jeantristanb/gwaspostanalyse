@@ -301,11 +301,14 @@ process AnalyzeByBlock{
      file(geneinfo) from geneinfo_ch_byblock
      file(haploblocks) from ch_haploblocks_byblock
      file(clump) from clump_res_byblock
-  publishDir "${params.output_dir}/byblock/", overwrite:true, mode:'copy'
+  publishDir "${params.output_dir}/byblock/", overwrite:true, mode:'copy', pattern: "${params.output}*"
+  publishDir "${params.output_dir}/byblock/subfile/", overwrite:true, mode:'copy'
   output :
+    set file("$infogwas"), file("${file_res}"), file("$gwas"), file("$geneinfo"), file("$haploblocks"), file("$clump"), file("relaunchfig.bash")
     file("$out")
     file("$outxlxs")
-    file('figure/*')
+    file('figure/*/*')
+    file('figure/*.pdf')
   script :
     pvalgwascat =  (params.head_pval_gwascat!='') ? " --pval_gwascat ${params.head_pval_gwascat} --threshpval_gwascat ${params.threshold_pval_gwascat}" : ""
     betagwascat= (params.head_beta!='') ? " --beta_gwas ${params.head_beta}" : ""
@@ -314,6 +317,7 @@ process AnalyzeByBlock{
     out=params.output+"_byblock.pdf"
     outxlxs=params.output+"_byblock.xlsx"
     """
+    echo "launch_plot_figrep.r -res_block $file_res --chro_gwascat ${params.head_chro_gwascat} --bp_gwascat ${params.head_bp_gwascat} --gwas_cat $infogwas --gwas_file $gwas --chro_gwas ${params.head_chr}  --bp_gwas ${params.head_bp} --rs_gwas ${params.head_rs} $pvalgwascat --pval_gwas ${params.head_pval} --threshpval ${params.threshpval} --print_gwascat ${params.info_gwascat} --info_gene $geneinfo --haploblocks $haploblocks --clump $clump --size_win_kb ${params.size_win_kb} --rs_gwascat ${params.head_rs_gwascat} --a1_gwas ${params.head_A1} --a0_gwas ${params.head_A0} $betagwascat $freqgwascat $segwascat " > relaunchfig.bash
     launch_analyse_posgwascat_byblock.r --res_block $file_res --chro_gwascat ${params.head_chro_gwascat} --bp_gwascat ${params.head_bp_gwascat} --gwas_cat $infogwas --gwas_file $gwas --chro_gwas ${params.head_chr}  --bp_gwas ${params.head_bp} --rs_gwas ${params.head_rs} $pvalgwascat --pval_gwas ${params.head_pval} --threshpval ${params.threshpval} --print_gwascat ${params.info_gwascat} --info_gene $geneinfo --haploblocks $haploblocks --clump $clump --size_win_kb ${params.size_win_kb} --rs_gwascat ${params.head_rs_gwascat} --a1_gwas ${params.head_A1} --a0_gwas ${params.head_A0} $betagwascat $freqgwascat $segwascat
     mv analyse_posgwascat_byblock.pdf $out
     mv resume_tab.xlsx $outxlxs
