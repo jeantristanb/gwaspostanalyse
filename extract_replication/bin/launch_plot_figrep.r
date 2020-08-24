@@ -1,11 +1,13 @@
+#!/usr/bin/Rscript
 source('/home/jeantristan/Travail/git/gwaspostanalyse/extract_replication/bin/libanalyse_gwas.r')
 library(data.table)
 library("optparse")
 #library('qqman')
 
-Test=T
+Test=F
 BestSol=F
 ChroBP=F
+ChroBPPlot=F
 if(Test==F){
 option_list = list(
   make_option("--gwas_file", type="character",
@@ -59,7 +61,7 @@ option_list = list(
   make_option("--a0_gwas", type="character",
               help="beta header for gwas file", metavar="character"),
   make_option("--out", type="character",default="out",
-              help="beta header for gwas file", metavar="character"),
+              help="beta header for gwas file", metavar="character")
 )
 
 
@@ -98,12 +100,17 @@ FileBlock<-opt[['clump']]
 InfoGC=opt[['print_gwascat']]
 ChroGE="CHR";BeginGE="BEGIN";EndGE="END";NameGene="GENE"
 OutPatt=opt[['out']]
+
+
 if(!is.null(opt[['chr_plot']]) & !is.null(opt[['bp_plot']])){
 ChrPlot=opt[['chr_plot']]
 BpPlot=as.integer(opt[['bp_plot']])
 ChroBPPlot=T
 }
-if(!is.null(opt[[bestsol]]))BestSol=T
+if(!is.null(opt[['bestsol']])){
+BestSol=T
+}
+
 }else{
 FileResBlocI<-'Old/4ef048faf214607018dd5a234cf49f/out.clump.ldbloc.detail'
 FileClump='Old/4ef048faf214607018dd5a234cf49f/out.plk.clumped'
@@ -132,7 +139,7 @@ OutPatt="test"
 }
 DataResBlockI<-read.table(FileResBlocI, header=T)
 DataClump<-read.table(FileClump, header=T)
-DataGWAS<-read.table(FileGWAS,header=T)
+DataGWAS<-as.data.frame(fread(FileGWAS,header=T))
 DataGWASCat=read.table(GWASCat, header=T)
 DataGene<-read.table(InfoGene, header=T)
 DataBlock=read.table(HaploBlock,sep='\t', header=T)
@@ -142,20 +149,18 @@ listInfoGC<-strsplit(InfoGC, split=',')[[1]]
 DataGC<-MakeGwasCatInfo(DataGWASCat,ChroGC,PosGC, paste(c(InfoGC, RsGC),collapse=','))
 DataWind<-BuildWind(DataGWASCat,ChroGC,PosGC, InfoGC,DataResBlockI,  DataGWAS,PvalGW,BetaGW, RsGW, A1GW, A0GW,SeGW, AfGW,listInfoGC)
 #if()BestSol<-DataWind[order(DataWind$PClump)[1],]
-if(BestSol)AllSolAn<-DataWind[order(DataWind$PClump)[1],]
-else if(ChroBPPlot){
-#ChrPlot=opt[['chr_plot']]
-#BpPlot=as.integer(opt[['bp_plot']])
-#ChroBPPlot=T
-AllSolAn<-DataWind[DataWind$Chro==ChrPlot & (DataWind$BeginBlock-WindSize)<BpPlot & (DataWind$EndBlock+WindSize)>BpPlot,]
-}else {
 AllSolAn<-DataWind[DataWind$p.adjust.bonf<0.05,]
+if(BestSol){
+AllSolAn<-DataWind[order(DataWind$PClump)[1],]
+}
+if(ChroBPPlot){
+AllSolAn<-DataWind[DataWind$Chro==ChrPlot & (DataWind$BeginBlock-WindSize)<BpPlot & (DataWind$EndBlock+WindSize)>BpPlot,]
 }
 
 for(CmtWind in 1:nrow(AllSolAn)){
 SolAn<-AllSolAn[CmtWind,]
 Chro<-SolAn$Chro;BeginBlock<-SolAn$BeginBlock;EndBlock<-SolAn$EndBlock;ListRs=as.character(SolAn[,'MinPRsClump'])
-pdf(paste(OutPatt,'_', Chro,'_',BeginBlock,'_',EndBlock,'_',WindSize,'pdf',sep=''))
+pdf(paste(OutPatt,'_', Chro,'_',as.integer(BeginBlock),'_',as.integer(EndBlock),'_',as.integer(WindSize),'.pdf',sep=''))
 PlotWindLocusZoom(SolAn$Chro,SolAn$BeginBlock, SolAn$EndBlock, WindSize,DataGWAS, ChroGW,PosGW, RsGW,PvalGW,DataGC,ChroGC, PosGC, DataClump, ListRs, DataGene,ChroGE, BeginGE, EndGE, NameGene, DataBlock)
 dev.off()
 }
