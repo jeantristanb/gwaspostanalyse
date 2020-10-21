@@ -54,7 +54,7 @@ params.cut_maf = 0.01
 
 
 params.mem_req="8G"
-params.big_time="100H"
+params.big_time="1000H"
 
 params.head_pval = "P_BOLT_LMM"
 params.head_freq = ""

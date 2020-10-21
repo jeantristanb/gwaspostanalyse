@@ -56,7 +56,7 @@ GwasCatF$h2.cat=computedher(GwasCatF$beta.cat, GwasCatF$sd.cat, GwasCatF$risk.al
 GwasCatF$Qc<-T
 GwasCatF$Qc<-GwasCatF$Qc & apply(GwasCatF[,c('beta.cat','sd.cat','risk.allele.af', 'nsample.cat','lower.cat','upper.cat')], 1,function(x)all(!is.na(x)))
 GwasCatF$Qc<-GwasCatF$Qc & GwasCat$risk.allele.af<1 & GwasCat$risk.allele.af>0 & GwasCat$beta.cat>GwasCat$lower.cat & GwasCat$beta.cat<GwasCat$upper.cat
-GwasCatF[,c(NamesGWAS, 'risk.allele.cat','beta.cat','lower.cat','upper.cat','nsample.cat','sd.cat','Z.gwascat','risk.allele.af', 'Qc','h2.cat')]
+GwasCatF[,c(NamesGWAS, 'risk.allele.cat','beta.cat','lower.cat','upper.cat','nsample.cat','sd.cat','Z.cat','risk.allele.af', 'Qc','h2.cat')]
 }
 
 GetDataWithGC<-function(GwasCat, File, chrhead, bphead,betahead,sehead,a1head, a2head,afhead,N, chrheadcat="Chro37", bpheadcat="PosBegin37", head=""){
@@ -73,8 +73,8 @@ GwasCatData$risk.allele.af[BaliseChange]<- 1 - GwasCatData$risk.allele.af.old[Ba
 GwasCatData$risk.allele[BaliseChange]<-GwasCatData$allele0[BaliseChange]
 GwasCatData$beta.cat.old<-GwasCatData$beta.cat
 GwasCatData$beta.cat[BaliseChange]<- -GwasCatData$beta.cat.old[BaliseChange]
-GwasCatData$Z.gwascat.old<- GwasCatData$Z.gwascat
-GwasCatData$Z.gwascat[BaliseChange]<- -GwasCatData$Z.gwascat.old[BaliseChange]
+GwasCatData$Z.cat.old<- GwasCatData$Z.cat
+GwasCatData$Z.cat[BaliseChange]<- -GwasCatData$Z.cat.old[BaliseChange]
 GwasCatData$upper.cat.old<- GwasCatData$upper.cat
 GwasCatData$lower.cat.old<- GwasCatData$lower.cat
 GwasCatData$lower.cat[BaliseChange]<- -GwasCatData$upper.cat.old[BaliseChange]
@@ -154,8 +154,6 @@ option_list = list(
               help="gwas catalog input", metavar="character"),
   make_option(c("--gc_chr"), type="character", default=NULL, 
               help="gwas catalog input", metavar="character"),
-  make_option(c("--info"), type="character", default=NULL, 
-              help="gwas catalog input", metavar="character"),
   make_option(c("--in_bp"), type="character", default=NULL, 
               help="gwas catalog input", metavar="character"),
   make_option(c("--in_chr"), type="character", default=NULL, 
@@ -168,6 +166,8 @@ option_list = list(
               help="gwas catalog input", metavar="character"),
   make_option(c("--in_a1"), type="character", default=NULL, 
               help="gwas catalog input", metavar="character"),
+  make_option(c("--gwas"), type="character", default=NULL, 
+              help="gwas catalog input", metavar="character"),
   make_option(c("--in_a2"), type="character", default=NULL, 
               help="gwas catalog input", metavar="character"),
   make_option(c("--gc_bp"), type="character", default=NULL, 
@@ -176,16 +176,26 @@ option_list = list(
               help="gwas catalog input", metavar="character"),
   make_option(c("--alpha_pt"), type="numeric", default=90,
               help="gwas catalog input", metavar="character"),
+  make_option(c("--n"), type="numeric", default=11000,
+              help="gwas catalog input", metavar="numeric"),
   make_option(c("--head"), type="character", default="", 
               help="head", metavar="character"),
   make_option(c("--out"), type="character", default="out", 
               help="output file name [default= %default]", metavar="character")
 ); 
 
+checkhead<-function(x, head){
+if(is.null(x)){
+cat(head, ' : null\n exit')
+q()
+}
+return(x)
+}
+
 
 args = commandArgs(trailingOnly=TRUE)
 if(length(args)==0){
-GwasCatI<-read.table('~/Data/GWASCat/GWASCat_27_March_2020.tsv', header=T, sep='\t', stringsAsFactors=F)
+GwasCatI<-read.table('gwascat/GWASCat_27_March_2020_diab.tsv', header=T, sep='\t', stringsAsFactors=F)
 File='Afr_GC_1000G_form.freq'
 chrheadcat="Chro37";bpheadcat="PosBegin37"
 #chrhead<-'chr';bphead='ps';betahead<-'beta';sehead='se';N=11000;a1head<-"allele1";a2head="allele0";afhead<-'af'
@@ -197,18 +207,22 @@ Out='test'
 }else{
 opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
-cat(opt[['gwascat']])
-GwasCatI<-read.table(opt[['gwascat']], header=T, sep='\t', stringsAsFactors=F)
-File<-opt[['info']];chrheadcat=opt[['gc_chr']];bpheadcat=opt[['gc_bp']]
-chrhead<-opt[['in_chr']];bphead=opt[['in_bp']];betahead<-opt[['in_beta']];sehead=opt[['in_se']];N=11000;a1head<-opt[['in_a1']];a2head=opt[['in_a2']];afhead<-opt[['in_af']];headout=opt[['head']]
-alpha_pt=opt[['alpha_pt']]
-Out=opt[['out']]
-cex_pt=opt[['cex_pt']]
+GwasCatI<-read.table(checkhead(opt[['gwascat']], 'gwascat'), header=T, sep='\t', stringsAsFactors=F)
+File<-opt[['gwas']];chrheadcat=checkhead(opt[['gc_chr']], 'gc_chr');bpheadcat=checkhead(opt[['gc_bp']], 'gc_bp')
+chrhead<-opt[['in_chr']];bphead=opt[['in_bp']];betahead<-opt[['in_beta']];sehead=opt[['in_se']];N=opt[['n']];a1head<-opt[['in_a1']];a2head=opt[['in_a2']];afhead<-opt[['in_af']];headout=checkhead(opt[['head']], 'head')
+alpha_pt=checkhead(opt[['alpha_pt']], 'alpha_pt')
+Out=checkhead(opt[['out']], 'out')
+cex_pt=checkhead(opt[['cex_pt']], 'cex_pt')
 }
 if(!is.null(betahead) & !is.null(sehead) & !is.null(afhead)){
+checkhead(betahead, 'in_beta');checkhead(sehead, 'in_se');checkhead(afhead, 'in_af');checkhead(a1head, 'in_a1');checkhead(a2head, 'in_a2');checkhead(bphead, 'in_bp');checkhead(chrhead, 'in_chr')
 baliseZ<-T
 }else{
 baliseZ<-F
+}
+if(any(!(c(bpheadcat, chrheadcat) %in% names(GwasCatI)))){
+paste(chrheadcat, 'or ', chrheadcat , ' not found in ', paste(names(GwasCatI),collapse=','))
+q()
 }
 GwasCat<-transform_gwascat(GwasCatI, chrheadcat,bpheadcat)
 GwasCat$PosCat<-1:nrow(GwasCat)
@@ -219,13 +233,48 @@ svg(paste(Out,'_cmpfreq.svg',sep=''))
 plotfreq(DataInfo[!is.na(DataInfo[,afhead]) & DataInfo$Qc,],afhead, 'risk.allele.af',cex_pt=cex_pt,alpha_pt=alpha_pt,xlab=headout, ylab='GWAS Catalog')
 dev.off()
 
+## plot of 
+#c(bottom, left, top, right)’
+#the four sides of the plot.  The default is ‘c(5, 4, 4, 2) +
+plothtfreq<-function(dataall, freqhead, col, ylim=NA, plot=T){
+nbcat=20
+height<-1
+perctrans<-90
+ht<-hist(dataall[,freqhead], nbcat, plot=F)
+ht$counts<-ht$counts/sum(ht$counts)*height *100
+par(mar=c(4,4,1,0))
+if(plot)plot(ht, col=t_col(col), xlab=xlab, ylab=ylab, xlim=c(0,1),  main="", ylim=ylim)
+return(ht)
+}
+freqhead<-afhead;dataall<-DataInfo[!is.na(DataInfo[,afhead]) & DataInfo$Qc,];ylab="% of SNPs";xlab="Frequency";col="orange"
+htaf<-plothtfreq(dataall, freqhead, col, NA, F)
+freqhead<-'risk.allele.af';dataall<-DataInfo[!is.na(DataInfo[,afhead]) & DataInfo$Qc,];ylab="% of SNPs";xlab="Frequency";col="red"
+htcat<-plothtfreq(dataall, freqhead, col, NA, F)
+ylim<-range(htaf$counts, htcat$counts)
+ylim[1]<-0
+
+freqhead<-afhead;dataall<-DataInfo[!is.na(DataInfo[,afhead]) & DataInfo$Qc,];ylab="% of SNPs";xlab="Frequency";col="orange"
+svg(paste(Out,'_histfreq_',afhead,'.svg',sep=''),width = 7*1.5, height = 7)
+plothtfreq(dataall, freqhead, col, ylim, T)
+dev.off()
+
+freqhead<-'risk.allele.af';dataall<-DataInfo[!is.na(DataInfo[,afhead]) & DataInfo$Qc,];ylab="% of SNPs";xlab="Frequency";col="red"
+svg(paste(Out,'_histfreq_gwascat.svg',sep=''), width = 7*1.5, height = 7)
+plothtfreq(dataall, freqhead, col, ylim, T)
+dev.off()
+
+
+
+names(DataInfo)
+table(is.na(DataInfo$h2), is.na(DataInfo$h2.cat))
+table(is.na(DataInfo$Z), is.na(DataInfo$Z.cat))
 if(baliseZ){
 svg(paste(Out,'_cmpZ.svg',sep=''))
-plotZ(DataInfo[!is.na(DataInfo$af.ckdepi) & DataInfo$Qc & (DataInfo$MAPPED_TRAIT %in% ListMappedTrait),],"Z", "Z.cat", xlab=head, ylab='GWAS Catalog')
+plotZ(DataInfo[!is.na(DataInfo$af) & DataInfo$Qc ,],"Z", "Z.cat", xlab=head, ylab='GWAS Catalog')
 dev.off()
 
 svg(paste(Out,'_cmph2.svg',sep=''))
-plotZ(DataInfo[!is.na(DataInfo$af.ckdepi) & DataInfo$Qc,],"h2", "h2.cat", xlab=head, ylab='GWAS Catalog')
+plotZ(DataInfo[!is.na(DataInfo$af) & DataInfo$Qc,],"h2", "h2.cat", xlab=head, ylab='GWAS Catalog')
 dev.off()
 }
 write.csv(DataInfo, row.names=F, quote=F, file=paste(Out,"_resume.csv",sep=''))

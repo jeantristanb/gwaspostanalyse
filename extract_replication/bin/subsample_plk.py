@@ -16,11 +16,12 @@ def write_list_info(file_inf, ChroHeadInf,BpHeadInf, Wind, Out):
    list_inf={}
    for line in read :
       spl=line.split('\t')
-      newbegin=int(spl[posbp])-Wind-100
-      if newbegin<1 :
+      if spl[posbp].upper()!="NA" and len(spl[posbp])>0 :
+        newbegin=int(spl[posbp])-Wind-100
+        if newbegin<1 :
          newbegin=1
-      res="\t".join([str(x).replace('"','') for x in [spl[poschro],int(newbegin),int(int(spl[posbp])+Wind+100), spl[poschro]+":"+spl[posbp]]])
-      write.write(res+'\n')
+        res="\t".join([str(x).replace('"','') for x in [spl[poschro],int(newbegin),int(int(spl[posbp])+Wind+100), spl[poschro]+":"+spl[posbp]]])
+        write.write(res+'\n')
    print("---- end : read pos to search in "+args.list_info+"----")
    write.close()
    return Out+".tmp"
