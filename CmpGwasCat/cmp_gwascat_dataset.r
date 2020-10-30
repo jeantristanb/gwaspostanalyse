@@ -195,15 +195,17 @@ return(x)
 
 args = commandArgs(trailingOnly=TRUE)
 if(length(args)==0){
-GwasCatI<-read.table('gwascat/GWASCat_27_March_2020_diab.tsv', header=T, sep='\t', stringsAsFactors=F)
-File='Afr_GC_1000G_form.freq'
-chrheadcat="Chro37";bpheadcat="PosBegin37"
-#chrhead<-'chr';bphead='ps';betahead<-'beta';sehead='se';N=11000;a1head<-"allele1";a2head="allele0";afhead<-'af'
-chrhead<-'CHR';bphead='BP';betahead<-NULL;sehead=NULL;N=NULL;a1head<-"A1";a2head="A2";afhead<-'MAF'
+#GwasCatI<-read.table('gwascat/GWASCat_27_March_2020_diab.tsv', header=T, sep='\t', stringsAsFactors=F);File='Afr_GC_1000G_form.freq';chrheadcat="Chro37";bpheadcat="PosBegin37";chrhead<-'CHR';bphead='BP';betahead<-NULL;sehead=NULL;N=NULL;a1head<-"A1";a2head="A2";afhead<-'MAF'
 headout=""
 cex_pt=0.15
 alpha_pt=0.9
 Out='test'
+GwasCatI<-read.table("../gwascatalog/egfr_pheno.tsv", header=T, sep='\t', stringsAsFactors=F);chrheadcat="ChroNewRs";bpheadcat="PosNewRs"
+chrhead='chr';bphead='ps';betahead='beta';sehead='se';N=11000;a1head="allele1";a2head="allele0";afhead='af'
+File="/home/jeantristan/Travail/GWAS/GWAS_CKD/ImputedDataV4/Result/agesexhivdmhtnpcabmi/Res/LogNewAcr/LogNewAcr_All_agesexhivdmhtnpcabmi_20190120.imp.stat"
+
+
+
 }else{
 opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
@@ -270,11 +272,11 @@ table(is.na(DataInfo$h2), is.na(DataInfo$h2.cat))
 table(is.na(DataInfo$Z), is.na(DataInfo$Z.cat))
 if(baliseZ){
 svg(paste(Out,'_cmpZ.svg',sep=''))
-plotZ(DataInfo[!is.na(DataInfo$af) & DataInfo$Qc ,],"Z", "Z.cat", xlab=head, ylab='GWAS Catalog')
+plotZ(DataInfo[!is.na(DataInfo$af) & DataInfo$Qc ,],"Z", "Z.cat", xlab=headout, ylab='GWAS Catalog')
 dev.off()
 
 svg(paste(Out,'_cmph2.svg',sep=''))
-plotZ(DataInfo[!is.na(DataInfo$af) & DataInfo$Qc,],"h2", "h2.cat", xlab=head, ylab='GWAS Catalog')
+plotZ(DataInfo[!is.na(DataInfo$af) & DataInfo$Qc,],"h2", "h2.cat", xlab=headout, ylab='GWAS Catalog')
 dev.off()
 }
 write.csv(DataInfo, row.names=F, quote=F, file=paste(Out,"_resume.csv",sep=''))
