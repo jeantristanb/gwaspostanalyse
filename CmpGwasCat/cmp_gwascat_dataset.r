@@ -279,5 +279,5 @@ svg(paste(Out,'_cmph2.svg',sep=''))
 plotZ(DataInfo[!is.na(DataInfo$af) & DataInfo$Qc,],"h2", "h2.cat", xlab=headout, ylab='GWAS Catalog')
 dev.off()
 }
-write.csv(DataInfo, row.names=F, quote=F, file=paste(Out,"_resume.csv",sep=''))
+write.csv(DataInfo, row.names=F, quote=T, file=paste(Out,"_resume.csv",sep=''))
 

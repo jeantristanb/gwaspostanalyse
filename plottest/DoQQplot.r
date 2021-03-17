@@ -90,6 +90,8 @@ option_list = list(
            help="file contains pheno file by line", metavar="character"),
   make_option(c("--test"), type="character", default="F", 
            help="file contains pheno file by line", metavar="character"),
+  make_option(c("--metasoft"), type="character", default="F", 
+           help="file contains pheno file by line", metavar="character"),
   make_option(c("--type_plot"), type="character", default="pdf", 
            help="file contains pheno file by line", metavar="character"),
   make_option(c("--out"), type="character", default="out.txt", 
@@ -99,6 +101,7 @@ option_list = list(
 
 args = commandArgs(trailingOnly=TRUE)
 balfreq=T
+balisemetasoft=F
 if(length(args)>0){
 opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
@@ -108,13 +111,14 @@ headpval=opt[['pval_head']]
 maf=opt[['maf']]
 typeplot=opt[['type_plot']]
 outplot=opt[['out']]
+if(opt[['metasoft']]=="T")balisemetasoft=T
 test=F
 print(is.null(opt[["test"]]))
 if(!is.null(opt[["test"]]) & opt[["test"]]=="T"){
 test=T
 }
 }else{
-FileInfo="/home/jeantristan/Travail/GWAS/AllVar/smartpca/PlotFig/infoall.tsv"
+FileInfo="/home/jeantristan/Travail/GWAS/lipid_gwas/smartpca/Analyse/QQPlot/VMars21/infoall.tsv"
 headpval="P_BOLT_LMM"
 headfreq="A1FREQ"
 maf=0.01
@@ -143,12 +147,14 @@ q(2)
 }
 }
 Cmt<-1
+listtrait2<-c()
 for(Trait in InfoRed[,1]){
 if(test)Data<-fread(InfoRed[Cmt,2], nrows=10000)
 else Data<-fread(InfoRed[Cmt,2])
 if(balfreq){
 Data<-Data[!is.na(Data[[headpval]]) & !is.na(Data[[headfreq]]) & Data[[headfreq]]>maf & Data[[headfreq]]<(1-maf),]
 }
+if(balisemetasoft)names(Data)<-c(names(Data)[-1], 'None')
 listres[[Trait]]=Data[[headpval]]
 #lbdaa<-estlambda(listres[[Trait]][,headpval])
 lbdaareg<-estlambda(listres[[Trait]])
@@ -157,10 +163,13 @@ tmpdf<-data.frame(var=Trait,file=InfoRed[Cmt,2],lb_estreg=lbdaareg$estimate, ld_
 if(Cmt==1)lamda<-tmpdf
 else lamda<-rbind(lamda,tmpdf)
 Cmt<-Cmt+1
+Trait2<-paste(Trait, ' (',round(lbdaareg$estimate,2),')',sep='')
+listtrait2<-c(listtrait2, Trait2)
 }
 #xlim=range(sapply(listres, function(x)range(x[,1], na.rm=T)))
 #ylim=range(sapply(listres, function(x)range(x[,2], na.rm=T)))
 fctplot(paste(outplot, typeplot,sep='.'))
+names(listres)<-listtrait2
 qqunif.plot(listres,  aspect = "fill")
 dev.off()
 write.csv(lamda, row.names=F, file=paste(outplot, 'csv',sep='.'))
