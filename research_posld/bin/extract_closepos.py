@@ -54,24 +54,14 @@ def read_bim_spe(filebim, infopos, infors):
 def parseArguments():
     parser = argparse.ArgumentParser(description='extract annotation for specific position')
     parser.add_argument('--list_info',type=str,required=True, help="file contains rs chro pos used to do windows")
-    parser.add_argument('--file_gwas',type=str,required=True, help="file contains GWAS result need result")
     parser.add_argument('--size_win_kb',type=float,required=False,help="windows size in kb", default=100)
     parser.add_argument('--out', type=str,help="header for out", default='test')
     parser.add_argument('--chro_header_info',type=str,help="header of chro in info file", required=True)
-    parser.add_argument('--bim_search',type=str,help="header of chro in info file", required=True)
     parser.add_argument('--bp_header_info',type=str,help="header of pval in info files", required=True)
-    parser.add_argument('--chro_header_gwas',type=str,help="header of rs in gwas file", required=True)
-    parser.add_argument('--rs_header_gwas',type=str,help="header of rs in gwas file", required=True)
-    parser.add_argument('--pval_header_gwas',type=str,help="header of pval in gwas file", required=True)
-    parser.add_argument('--bp_header_gwas',type=str,help="header of bp in GWAS files", required=True)
     parser.add_argument('--binplinks',type=str,help="binary of plink", default="plink")
-    parser.add_argument('--minpval',type=str,help="clump option", default="0.1")
-    parser.add_argument('--r2',type=str,help="clump option ", default="0.1")
-    parser.add_argument('--cpus',type=str,help="cpus number for plink", default="2")
-    parser.add_argument('--bfile',type=str,help="bfile to defined clump in gwas file", required=True)
-    parser.add_argument('--keep',type=str,help="option keep of plink ", default=None)
-    parser.add_argument('--fam',type=str,help="option keep of plink ", default=None)
-    parser.add_argument('--resume',type=int,help="n header in inp files", default=0)
+    parser.add_argument('--bfile_imp',type=str,help="bfile to defined clump in gwas file", required=True)
+    parser.add_argument('--cpus',type=str,help="bfile to defined clump in gwas file", required=False, default=5)
+    parser.add_argument('--bfile_array',type=str,help="bfile to defined clump in gwas file", required=True)
     args = parser.parse_args()
     return args
 
@@ -86,7 +76,10 @@ filesubgwas=args.out+".sub_gwas"
 ResLd=None
 ## extraction of information position of interest
 (infopos,infors)  = read_list_info(args.list_info, ChroHeadInf,BpHeadInf, windows_size_kb*1000)
-biminfo=read_bim_spe(args.bim_search, infopos, infors)
+
+## read bim info of array
+biminfo=args.bfile_array+'.bim'
+biminfo=read_bim_spe(biminfo, infopos, infors)
 
 infogwas=args.out+".infogwas"
 chaineld=[]
@@ -97,7 +90,7 @@ for chro in biminfo:
 winf=open(infogwas, 'w')
 winf.write("\n".join(set(chaineld)))
 winf.close()
-cmd=args.binplinks+" -bfile "+args.bfile+" --threads "+args.cpus+"  --r2 --extract range "+ infogwas+" -out "+args.out+" --maf 0.00001 "+"--ld-window-kb "+str(windows_size_kb) + "   --ld-window-r2 0 --ld-window 99999 "#+" --blocks-min-maf " #+" --ld-snps range "+infogwas)
+cmd=args.binplinks+" -bfile "+args.bfile_imp+" --threads "+str(args.cpus)+"  --r2 --extract range "+ infogwas+" -out "+args.out+" --maf 0.00001 "+"--ld-window-kb "+str(windows_size_kb) + "   --ld-window-r2 0 --ld-window 99999 "#+" --blocks-min-maf " #+" --ld-snps range "+infogwas)
 #print(cmd)
 outcmd=os.system(cmd)
 if outcmd!=0:
