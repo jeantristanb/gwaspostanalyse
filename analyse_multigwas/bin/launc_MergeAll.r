@@ -55,41 +55,41 @@ return(TmpData)
 }
 
 option_list = list(
-  make_option(c("-f", "--list_files"), type="character",
+  make_option(c( "--list_files"), type="character",
               help="file name contains all file with result column and header: Traits Type Site File FilePheno ", metavar="character"),
-  make_option(c("-fo", "--list_files_othertraits"), type="character",
+  make_option(c("--list_files_othertraits"), type="character",
               help="file name contains all file with result column and header: Traits Type Site File FilePheno ", default=""),
-  make_option(c("-maf", "--maf"), type="numeric", default=0.01,
+  make_option(c("--maf"), type="numeric", default=0.01,
               help="output file name [default= %default]", metavar="character"),
-  make_option(c("-o", "--out"), type="character",
+  make_option(c("--out"), type="character",
               help="output file name [default= %default]", metavar="character"),
   make_option(c("-c", "--covariates"), type="character",
               help="covariates to statistical analysis [default= %default]", default="", metavar="character"),
-  make_option(c("-mxpv", "--max_pval"), type="numeric", default = 0.001,
+  make_option(c("--max_pval"), type="numeric", default = 0.001,
               help="output file name"),
-  make_option(c("-wm", "--wind_merge"), type="numeric", default = 200000,
+  make_option(c("--wind_merge"), type="numeric", default = 200000,
               help="output file name"),
-  make_option(c("-mxpvr", "--max_pval_rep"), type="numeric", default = 0.001,
+  make_option(c("--max_pval_rep"), type="numeric", default = 0.001,
               help="output file name"),
-  make_option(c("-gc", "--gwas_cat"), type="character",
+  make_option(c("--gwas_cat"), type="character",
               help="output file name"),
-  make_option(c("-gi", "--genes_info"), type="character",
+  make_option(c("--genes_info"), type="character",
               help="output file name"),
-  make_option(c("-af", "--all_file"), type="character",
+  make_option(c("--all_file"), type="character",
               help="output file name"),
-  make_option(c("-sw", "--size_win"), type="numeric", default = 25000 ,
+  make_option(c("--size_win"), type="numeric", default = 25000 ,
               help="output file name"),
-  make_option(c("-hmaf", "--head_freq"), type="character", default="A1FREQ",
+  make_option(c("--head_freq"), type="character", default="A1FREQ",
               help="output file name [default= %default]", metavar="character"),
-  make_option(c("-hpv", "--head_pval"), type="character", default="P_BOLT_LMM",
+  make_option(c("--head_pval"), type="character", default="P_BOLT_LMM",
               help="output file name [default= %default]", metavar="character"),
-  make_option(c("-hb", "--head_beta"), type="character", default="BETA",
+  make_option(c("--head_beta"), type="character", default="BETA",
               help="output file name [default= %default]", metavar="character"),
-  make_option(c("-hrs", "--head_rs"), type="character", default="SNP",
+  make_option(c("--head_rs"), type="character", default="SNP",
               help="output file name [default= %default]", metavar="character"),
-  make_option(c("-hse", "--head_se"), type="character", default="SE",
+  make_option(c("--head_se"), type="character", default="SE",
               help="output file name [default= %default]", metavar="character"),
-  make_option(c("-to", "--type_out"), type="character", default="pdf",
+  make_option(c("--type_out"), type="character", default="pdf",
               help="output file name [default= %default]", metavar="character")
 );
 
@@ -179,7 +179,7 @@ ManPlo<-paste(gsub(".","-",gsub(".pdf","",paste("figure/",basename(gsub("_","-",
 file.copy(ManPloI,ManPlo)
 ManPloFig<-c(ManPloFig,ManPlo)
 }
-FileRnw="/dataE/AWIGenGWAS/shared/ResultGWAS/Ressource/nf_analyse/bin/MergeAll.Rnw"
+FileRnw="MergeAll.Rnw"
 
 
 RsResume=GetMergeFile(grep("_rsresume.csv", AllFileToMerge, value=T))

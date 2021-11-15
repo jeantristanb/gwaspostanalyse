@@ -152,6 +152,7 @@ list_file_other=Channel.fromPath(params.files_othertraits)
 list_file_other=file('NO_FILE')
 }
 
+gwascat_ch=Channel.fromPath(params.gwas_cat)
 process ComputeStat{
    memory params.mem_req
    time params.big_time
@@ -159,6 +160,7 @@ process ComputeStat{
    input :
        file(list_file)  from list_file_analys
        file(other_file) from list_file_other
+       file(gwascat) from gwascat_ch
    each pheno from pheno_label_ch_analy 
    each chro from  listchro2
    output :
@@ -168,7 +170,7 @@ process ComputeStat{
     out="${pheno}_${chro}"
     other_trait       =  (params.files_othertraits) ? "--list_files_othertraits $other_file" : ""
     """
-    AnalyseAll.r --maf ${params.cut_maf}  --pheno ${pheno} --out $out  --head_pval ${params.head_pval} --head_freq ${params.head_freq} --list_files $list_file --head_bp  ${params.head_bp} --head_chr ${params.head_chr} --head_rs ${params.head_rs}  --head_beta ${params.head_beta} --head_se ${params.head_se} --head_A1 ${params.head_A1} --head_A2 ${params.head_A2} --max_pval ${params.max_pval} --max_pval_rep ${params.max_pval_rep} --num_chr $chro --gwas_cat ${params.gwas_cat} --genes_info ${params.genes_info}  --size_win ${params.size_win} $other_trait --wind_merge ${params.wind_merge}
+    AnalyseAll.r --maf ${params.cut_maf}  --pheno ${pheno} --out $out  --head_pval ${params.head_pval} --head_freq ${params.head_freq} --list_files $list_file --head_bp  ${params.head_bp} --head_chr ${params.head_chr} --head_rs ${params.head_rs}  --head_beta ${params.head_beta} --head_se ${params.head_se} --head_A1 ${params.head_A1} --head_A2 ${params.head_A2} --max_pval ${params.max_pval} --max_pval_rep ${params.max_pval_rep} --num_chr $chro --gwas_cat $gwascat --genes_info ${params.genes_info}  --size_win ${params.size_win} $other_trait --wind_merge ${params.wind_merge} --head_chr_gc ${params.head_chr_gc} --head_bp_gc ${params.head_bp_gc}
     """
 }
 
@@ -184,13 +186,14 @@ else covar=""
 
 if(params.files_othertraits)othertraits="--list_files_othertraits ${params.files_othertraits}"
 else othertraits=""
-
+knitropt_ch=Channel.fromPath(baseDir+"/bin/MergeAll.Rnw")
 process MergeStat{
    memory params.mem_req
    time params.big_time
    input :
       val(listfile) from stats_multi_mer
       set val, file(fileinput) from multiphenofile
+      file(knitopt) from  knitropt_ch
    publishDir "${params.output_dir}/${params.out}${pheno}", overwrite:true ,mode:'copy'
    output :
      set file("${pheno}.xlsx"), file("figure/*") ,file("${pheno}.tex"), file("${pheno}.pdf") into stats_multi_merg

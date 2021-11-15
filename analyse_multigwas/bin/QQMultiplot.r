@@ -13,21 +13,21 @@ CumSumLogLik=function(pvalt) {
 
 
 option_list = list(
-  make_option(c("-f", "--list_files"), type="character", default="All_trait.in",
+  make_option(c("--list_files"), type="character", default="All_trait.in",
               help="file name contains all file with result column and header: Traits Type Site File FilePheno ", metavar="character"),
-  make_option(c("-maf", "--maf"), type="numeric", default=0.01,
+  make_option(c("--maf"), type="numeric", default=0.01,
               help="output file name [default= %default]", metavar="character"),
-  make_option(c("-o", "--out_file"), type="character", default="out",
+  make_option(c("--out_file"), type="character", default="out",
               help="output file name [default= %default]", metavar="character"),
-  make_option(c("-hmaf", "--head_freq"), type="character", default="A1FREQ",
+  make_option(c("--head_freq"), type="character", default="A1FREQ",
               help="output file name [default= %default]", metavar="character"),
-  make_option(c("-hpv", "--head_pval"), type="character", default="P_BOLT_LMM",
+  make_option(c("--head_pval"), type="character", default="P_BOLT_LMM",
               help="output file name [default= %default]", metavar="character"),
-  make_option(c("-ph", "--pheno"), type="character",
+  make_option(c("--pheno"), type="character",
               help="output file name", metavar="character"),
-  make_option(c("-to", "--type_out"), type="character", default="jpeg",
+  make_option(c("--type_out"), type="character", default="jpeg",
               help="output file name [default= %default]", metavar="character"),
-  make_option(c("-t", "--nThread"), type="integer", default=3,
+  make_option(c("--nThread"), type="integer", default=3,
               help="output file name [default= %default]")
 );
 args = commandArgs(trailingOnly=TRUE)
@@ -58,6 +58,7 @@ CmtFile<-1
 ListResLog<-list()
 MafMax<-1-Maf
 for(File in ListeFile){
+print(File)
 Data<-as.data.frame(fread(File,header=T,nThread=opt[['nThread']]), )
 if(!any(is.numeric(Data[!is.na(Data[,Pval]) & !is.infinite(Data[,Pval]),Pval]))){
 Data[,Pval]<-as.numeric(Data[,Pval])
