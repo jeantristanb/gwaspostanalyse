@@ -1,4 +1,5 @@
-#!/usr/bin/Rscript
+#!/usr/bin/env Rscript
+
 library("optparse")
 library('qqman')
 suppressMessages(require(data.table))
@@ -14,7 +15,9 @@ CumSumLogLik=function(pvalt) {
 #SNP	CHR	BP
 
 option_list = list(
-  make_option(c("--list_files"), type="character", default="All_trait.in",
+  make_option(c("--list_files"), type="character", 
+              help="file name contains all file with result column and header: Traits Type Site File FilePheno ", metavar="character"),
+  make_option(c("--file_gwas"), type="character", 
               help="file name contains all file with result column and header: Traits Type Site File FilePheno ", metavar="character"),
   make_option(c("--maf"), type="numeric", default=0.01,
               help="output file name [default= %default]", metavar="character"),
@@ -47,7 +50,12 @@ opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
 }
 
+if(is.null(opt[['list_files']])){
+FileAll=data.frame(Pheno=strsplit(opt[['pheno']],split=',')[[1]], File=strsplit(opt[['file_gwas']],split=',')[[1]], Type=strsplit(opt[['type']], split=',')[[1]])
+}else{
 FileAll=read.table(opt[['list_files']], header=T, stringsAsFactors=F)
+}
+
 if(!is.null(opt[['pheno']])){
 FileAll<-FileAll[FileAll$Pheno==opt[['pheno']] & FileAll$Type==opt[['type']],]
 }
@@ -55,7 +63,8 @@ if(nrow(FileAll)!=1){
 cat('not 1 line available in ', opt[['list_files']],"(pheno :",opt[['pheno']],")")
 q()
 }
-ListeFile<-FileAll$File
+print(FileAll$File)
+ListeFile<-as.character(FileAll$File)
 NameMod<-FileAll$Type
 Maf<-opt[['maf']]
 #SNP	CHR	BP	GENPOS
@@ -66,7 +75,7 @@ Chr<-opt[['head_chr']]
 bp<-opt[['head_bp']]
 if(opt[['type_out']]=="pdf")fctplot=pdf else if(opt[['type_out']]=="jpeg")fctplot=jpeg else if(opt[['type_out']]=="tiff")fctplot=tiff else q()
 ListAll=list()
-Data<-as.data.frame(fread(FileAll$File,header=T))
+Data<-as.data.frame(fread(as.character(FileAll$File[1])))
 if(!any(is.numeric(Data[!is.na(Data[,Pval]) & !is.infinite(Data[,Pval]),Pval]))){
 Data[,Pval]<-as.numeric(Data[,Pval])
 }

@@ -1,4 +1,5 @@
-#!/usr/bin/Rscript
+#!/usr/bin/env Rscript
+
 
 listpackage=c("data.table", "plyr", "optparse", "qqman", "knitr", "kableExtra", "ggplot2")
 namepack=rownames(installed.packages())
