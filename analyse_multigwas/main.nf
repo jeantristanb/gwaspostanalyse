@@ -73,8 +73,6 @@ params.nb_cpu = 3
 params.head_chr_gc="CHR"
 params.head_bp_gc="BEGIN"
 
-#gwaspostanalyse/analyse_multigwas/main.nf
-## --head_chr_gc ${params.head_chr_gc} --head_bp_gc ${params.head_bp_gc}
 
 
 
@@ -204,19 +202,20 @@ list_file_other=file('NO_FILE')
 }
 
 gwascat_ch=Channel.fromPath(params.gwas_cat)
+list_file_gwas_compstat=channel.fromPath(listfile[1]).collect()
 process ComputeStat{
     label 'R'
    memory params.mem_req
    time params.big_time
    cpus params.nb_cpu
    input :
+       path(allgwas) from  list_file_gwas_compstat
        file(list_file)  from list_file_analys
        file(other_file) from list_file_other
        file(gwascat) from gwascat_ch
    each pheno from pheno_label_ch_analy 
    each chro from  listchro2
    output :
-       //set pheno,file("${out}_nsig.csv"), file("${out}_rsgwasdet.csv"), file("${out}_rsresume.csv"),file("${out}_windgwasdet.csv"), file("${out}_windresume.csv"),file("${out}_othertrait.csv") into stats_multi
        set pheno, file("${out}*.csv") into stats_multi
    script :
     out="${pheno}_${chro}"
