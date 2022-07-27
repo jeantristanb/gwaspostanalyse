@@ -51,6 +51,7 @@ parser <- add_option(parser, c('--id'), type = 'character', help = 'variant ID',
 parser <- add_option(parser, c('--samples-file'), type = 'character', help = 'file with list of samples to include', metavar = '<file>')
 parser <- add_option(parser, c('--minimal'), action = 'store_true', default = FALSE, help = 'only plot NORMX/NORMY and BAF/LRR plots')
 parser <- add_option(parser, c('--zcall'), action = 'store_true', default = FALSE, help = 'plot ZCall thresholds')
+parser <- add_option(parser, c('--info_pop'), type = 'character', help = 'plot ZCall thresholds', default=NULL)
 args <- parse_args(parser, commandArgs(trailingOnly = TRUE), convert_hyphens_to_underscores = TRUE)
 
 write(paste('gtc2vcf_plot.R', gtc2vcf_plot_version, 'https://github.com/freeseek/gtc2vcf'), stderr())
@@ -94,13 +95,6 @@ if (packageVersion("data.table") < '1.11.6') {
 } else {
   df <- setNames(fread(cmd = cmd, sep = '\t', header = FALSE, na.strings = '.', data.table = FALSE), names)
 }
-balisepop<-0
-print(head(df))
-if(!is.null(args$infopos)){
-balisepop<-1
-dfind<-read.table(args$infopos, header=T)
-df<-merge(df, dfind, by='ID')
-}
 if (!is.null(args$id)) {
   if (!(args$id %in% unique(df$ID))) stop('Specified ID not present at specified location')
   df <- df[df$ID == args$id,]
@@ -109,14 +103,29 @@ if (!is.null(args$id)) {
 }
 v <- sapply(df[,info], unique)
 
+if(!is.null(args$info_pop)){
+dfind<-read.table(args$info_pop, header=F)
+names(dfind)<-c('SAMPLE', 'Col')
+df<-merge(df, dfind, by='SAMPLE',all.x=T)
+df$Col<-as.integer(as.factor(df$Col))
+df$Col[is.na(df$Col)]<-max(df$Col)+1
+print(head(df))
+color="Col"
+}else{
+color="GT"
+}
+
+print(paste(basename(args$pdf),'.txt',sep=''))
+write.table(df, file=paste(args$pdf,'.txt',sep=''),row.names=F, col.names=T, sep='\t')
+
 if (args$illumina) {
-  p1 <- ggplot(df, aes(x = Y, y = X, color = GT, shape = GT)) +
+  p1 <- ggplot(df, aes_string(x = "Y", y = "X", color = color, shape = "GT")) +
     geom_point(size = .5) +
     scale_x_continuous(limits = c(0, NA), expand = expand_scale(mult = c(0, .05))) +
     scale_y_continuous(limits = c(0, NA), expand = expand_scale(mult = c(0, .05))) +
     theme_bw(base_size = args$fontsize) +
     theme(legend.position = 'none')
-  p2 <- ggplot(df, aes(x = NORMY, y = NORMX, color = GT, shape = GT)) +
+  p2 <- ggplot(df, aes_string(x = "NORMY", y = "NORMX", color = color, shape = "GT")) +
     geom_point(size = .5) +
     scale_x_continuous(limits = c(0, NA), expand = expand_scale(mult = c(0, .05))) +
     scale_y_continuous(limits = c(0, NA), expand = expand_scale(mult = c(0, .05))) +
@@ -128,7 +137,7 @@ if (args$illumina) {
     p2 <- p2 + geom_vline(xintercept = zthresh_Y, color = 'gray') +
       geom_hline(yintercept = zthresh_X, color = 'gray')
   }
-  p3 <- ggplot(df, aes(x = THETA, y = R, color = GT, shape = GT)) +
+  p3 <- ggplot(df, aes_string(x = "THETA", y = "R", color = color, shape = "GT")) +
     geom_point(size = .5) +
     scale_x_continuous(limits = c(0,1), expand = expand_scale(0)) +
     theme_bw(base_size = args$fontsize) +
@@ -140,13 +149,13 @@ if (args$illumina) {
     p3 <- p3 + annotate('path', x=x, y=y)
   }
 } else if (args$affymetrix) {
-  p2 <- ggplot(df, aes(x = NORMX, y = NORMY, color = GT, shape = GT)) +
+  p2 <- ggplot(df, aes_string(x = "NORMX", y = "NORMY", color = color, shape = "GT")) +
     geom_point(size = .5) +
     scale_x_continuous(limits = c(0, NA), expand = expand_scale(mult = c(0, .05))) +
     scale_y_continuous(limits = c(0, NA), expand = expand_scale(mult = c(0, .05))) +
     theme_bw(base_size = args$fontsize) +
     theme(legend.position = 'none')
-  p3 <- ggplot(df, aes(x = DELTA, y = SIZE, color = GT, shape = GT)) +
+  p3 <- ggplot(df, aes_string(x = "DELTA", y = "SIZE", color = color, shape = "GT")) +
     geom_point(size = .5) +
     theme_bw(base_size = args$fontsize) +
     theme(legend.position = 'none')
@@ -167,7 +176,7 @@ if (args$illumina) {
     }
   }
 }
-p4 <- ggplot(df, aes(x = BAF, y = LRR, color = GT, shape = GT)) +
+p4 <- ggplot(df, aes_string(x = "BAF", y = "LRR", color = color, shape = "GT")) +
   geom_point(size = .5) +
   theme_bw(base_size = args$fontsize) +
   theme(legend.position = 'bottom', legend.box = 'horizontal')
