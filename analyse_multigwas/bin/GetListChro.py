@@ -14,21 +14,15 @@ def parseArguments():
 
 args = parseArguments()
 
-ReadFile=open(args.list_file)
-Head=ReadFile.readline().replace('\n','').split()
-PosFile=Head.index("File")
-#echo -e "Pheno\tType\tFile"> list_file.gwas
-PosPheno=Head.index("Pheno")
+listfile=args.list_file.split(',')
 ListChro=set([])
-for line in ReadFile :
-   SplL=line.replace("\n","").split()
-   if len(SplL)>0 :
-       ReadGWAS=open(SplL[PosFile])
-       Head2=ReadGWAS.readline().replace('\n','').split()
-       PosHeadChr=Head2.index(args.head_chr)
-       for lireGWAS in ReadGWAS :
-           ListChro.add(lireGWAS.split()[PosHeadChr])
-       ReadGWAS.close()
+for filea in  listfile :
+ ReadGWAS=open(filea)
+ Head2=ReadGWAS.readline().replace('\n','').split()
+ PosHeadChr=Head2.index(args.head_chr)
+ for lireGWAS in ReadGWAS :
+    ListChro.add(lireGWAS.split()[PosHeadChr])
+ ReadGWAS.close()
 
 for x in ListChro :
    print(x)

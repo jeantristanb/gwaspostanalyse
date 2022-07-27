@@ -1,4 +1,5 @@
-#!/usr/bin/Rscript
+#!/usr/bin/env Rscript
+
 library("optparse")
 suppressMessages(require(data.table))
 
@@ -13,7 +14,11 @@ CumSumLogLik=function(pvalt) {
 
 
 option_list = list(
-  make_option(c("--list_files"), type="character", default="All_trait.in",
+  make_option(c("--list_files"), type="character",
+              help="file name contains all file with result column and header: Traits Type Site File FilePheno ", metavar="character"),
+  make_option(c("--file_gwas"), type="character", 
+              help="file name contains all file with result column and header: Traits Type Site File FilePheno ", metavar="character"),
+  make_option(c("--type"), type="character", 
               help="file name contains all file with result column and header: Traits Type Site File FilePheno ", metavar="character"),
   make_option(c("--maf"), type="numeric", default=0.01,
               help="output file name [default= %default]", metavar="character"),
@@ -39,7 +44,15 @@ opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
 }
 
+if(is.null(opt[['list_files']])){
+print(strsplit(opt[['pheno']],split=',')[[1]])
+print(strsplit(opt[['file_gwas']],split=',')[[1]])
+print(strsplit(opt[['type']],split=',')[[1]])
+FileAll=data.frame(Pheno=strsplit(opt[['pheno']],split=',')[[1]], File=strsplit(opt[['file_gwas']],split=',')[[1]], Type=strsplit(opt[['type']], split=',')[[1]])
+}else{
 FileAll=read.table(opt[['list_files']], header=T, stringsAsFactors=F)
+}
+
 if(!is.null(opt[['pheno']])){
 FileAll<-FileAll[FileAll$Pheno==opt[['pheno']],]
 }
@@ -47,8 +60,8 @@ if(nrow(FileAll)==0){
 cat('not lines available in ', opt[['list_files']],"(pheno :",opt[['pheno']],")")
 q()
 }
-ListeFile<-FileAll$File
-NameMod<-FileAll$Type
+ListeFile<-as.character(FileAll$File)
+NameMod<-as.character(FileAll$Type)
 Maf<-opt[['maf']]
 
 Pval<-opt[['head_pval']]
@@ -59,7 +72,7 @@ ListResLog<-list()
 MafMax<-1-Maf
 for(File in ListeFile){
 print(File)
-Data<-as.data.frame(fread(File,header=T,nThread=opt[['nThread']]), )
+Data<-as.data.frame(fread(File,header=T,nThread=opt[['nThread']]))
 if(!any(is.numeric(Data[!is.na(Data[,Pval]) & !is.infinite(Data[,Pval]),Pval]))){
 Data[,Pval]<-as.numeric(Data[,Pval])
 }

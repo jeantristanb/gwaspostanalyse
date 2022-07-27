@@ -144,7 +144,7 @@ DataGeneInfo<-DataGeneInfo[as.character(DataGeneInfo$CHR)==ChroNum,]
 DataGeneInfo$PosGene<-1:nrow(DataGeneInfo)
 }
 for(File in FileAll$File){
-Data<-fread(File)
+Data<-fread(basename(File))
 Data<-as.data.frame(Data[as.character(Data[[ChroHead]])==ChroNum])
 if(!any(is.numeric(Data[!is.na(Data[,PvalHead]) & !is.infinite(Data[,PvalHead]),PvalHead]))){
 Data[,PvalHead]<-as.numeric(Data[,PvalHead])
@@ -198,6 +198,8 @@ ListGroup[tmp]
 
 MergeAllChro<-function(Data1, Data2, SizeWind){
 for(Cmt in 1:nrow(Data1)){
+print(head(Data1))
+print(head(Data2))
 Wind<-CompareWindowsChro(Data1[Cmt,1], Data1[Cmt,2], Data1[Cmt,3], Data2[,1], Data2[,2],Data2[,3],SizeWind)
 Tmp<-data.frame(Pos1=rep(Data1[Cmt,3], length(Wind)), Pos2=Wind)
 if(Cmt==1)DataF<-Tmp
@@ -219,7 +221,7 @@ Cmt<-Cmt+1
 if(!is.null(opt[['gwas_cat']])){
 DataFByRs$PosGWAS<-1:nrow(DataFByRs)
 DataFByRsTmp<-data.frame(BEGIN=DataFByRs[,BpHead]-100, END=DataFByRs[,BpHead]+100, DataFByRs$PosGWAS)
-Res<-MergeAllChro(DataFByRsTmp, DataGWASCat[,c(BpHeadGc, "PosCat")], SizeWind)
+Res<-MergeAllChro(DataFByRsTmp, DataGWASCat[,c(BpHeadGc, BpHeadGc, "PosCat")], SizeWind)
 names(Res)<-c("PosGWAS", "PosCat");Res<-Res[!is.na(Res[,2]),]
 DataFByRsFGWAS<-merge(DataFByRs,Res,by="PosGWAS",all.x=T)
 DataFByRsFGWAS<-merge(DataFByRsFGWAS,DataGWASCat,by="PosCat",all.x=T, suffixes = c("",".cat"),)
@@ -274,8 +276,13 @@ else ResF<-merge(ResF , ResPop, by=c(Rs,Chr,Pos),all=T)
 Cmt<-Cmt+1
 }
 names(ResF)<-gsub("-","_", names(ResF))
+print(head(ResF))
 ListPva<-grep(Pval, names(ResF), value=T)
+if(length(ListPva)>1){
 ResF2<-ResF[apply(ResF[,ListPva],1, function(x)length(x[!is.na(x) & x<Pvalue])>0),]
+}else {
+ResF2<-ResF[!is.na(ResF[,ListPva]) & ResF[,ListPva]<Pvalue,]
+}
 ResF2<-ResF2[order(ResF2[,Chr], ResF2[,Pos]),]
 CmtG<-1
 for(Chro in unique(ResF2[,Chr])){

@@ -16,6 +16,12 @@
 //---- General definitions --------------------------------------------------//
 
 import java.nio.file.Paths
+nextflow.enable.dsl = 1
+
+
+filescript=file(workflow.scriptFile)
+projectdir="${filescript.getParent()}"
+bin_dir="${projectdir}/bin"
 
 
 
@@ -37,6 +43,7 @@ def params_help = new LinkedHashMap(helps)
 params.queue      = 'batch'
 params.work_dir   = "$PWD"
 params.input_listfiles = "${params.work_dir}/list_files.input"
+params.covariates=""
 params.output_dir = "${params.work_dir}/output"
 params.cut_maf = 0.01
 params.pb_around_rs = 25000
@@ -63,6 +70,10 @@ params.size_win=25000
 params.genes_info="/dataE/AWIGenGWAS/shared/ResultGWAS/Ressource/gencode.v19.genes"
 params.nb_cpu = 3
 
+params.head_chr_gc="CHR"
+params.head_bp_gc="BEGIN"
+
+
 
 
 if(params.pheno=="" || params.input_listfiles==""){
@@ -75,21 +86,53 @@ list_file_manh=Channel.create()
 list_file_lchro=Channel.create()
 list_file_analys=Channel.create()
 
-Channel.fromPath(params.input_listfiles).separate(list_file_qq,list_file_manh, list_file_lchro, list_file_analys) { a -> [a,a,a,a] }
+Channel.fromPath(params.input_listfiles, checkIfExists:true).separate(list_file_qq,list_file_manh, list_file_lchro, list_file_analys) { a -> [a,a,a,a] }
 pheno_label_ch_qq = Channel.from(params.pheno.split(","))
+list_file_gwas_qq=channel.fromPath(file(params.input_listfiles).readLines())
+def GetListFile(File, ListTrait){
+  File theInfoFile = new File( File )
+   AllLines=theInfoFile.readLines()
+   Head=AllLines[0].split()
+   PosFile= Head.findIndexOf { it ==~ /File/ }  
+   PosPheno= Head.findIndexOf { it ==~ /Pheno/ }
+   PosType= Head.findIndexOf { it ==~ /Type/ }
+   ListPheno=[]
+   ListType=[]
+   ListFile=[]
+   for(line in AllLines){
+     SplLines=line.split() 
+     if(SplLines.size() >0 && ListTrait.contains(SplLines[PosPheno])){
+        ListPheno+=[SplLines[PosPheno]]
+        ListFile+=[SplLines[PosFile]]
+        ListType+=[SplLines[PosType]]
+     }
+   }
+  return [ListPheno,ListFile, ListType]
+}
+ListFile=GetListFile(params.input_listfiles,params.pheno.split(","))
+
+listfile=GetListFile(params.input_listfiles,params.pheno.split(","))
+
+list_file_pheno_qq=channel.from(listfile[0])
+list_file_sumstat_qq=channel.fromPath(listfile[1], checkIfExists:true)
+list_file_type_qq=channel.from(listfile[2])
+
+
 process drawQQPlot {
+    label 'R'
     memory params.mem_req
     time params.big_time
     cpus params.nb_cpu
     input:
-      file(list_file) from list_file_qq
-    each this_pheno from pheno_label_ch_qq
+      file(filegwas) from list_file_sumstat_qq
+      val(this_pheno) from list_file_pheno_qq
+      val(type) from list_file_type_qq
     output:
-      set this_pheno, file (output) into report_pca_pheno
+      tuple val(this_pheno), path(output) into report_pca_pheno
     script:
       output="${this_pheno}.qq.jpeg"
     """
-    QQMultiplot.r --maf ${params.cut_maf}  --pheno ${this_pheno} --out_file $output  --head_pval ${params.head_pval} --head_freq ${params.head_freq} --list_files $list_file --type_out jpeg --nThread ${params.nb_cpu}
+    QQMultiplot.r --maf ${params.cut_maf}  --pheno ${this_pheno} --out_file $output  --head_pval ${params.head_pval} --head_freq ${params.head_freq} --file_gwas $filegwas --type_out jpeg --nThread ${params.nb_cpu} --type $type
     """
 }
 
@@ -108,38 +151,44 @@ def GetTypeSex(File,ListTrait){
    }
    return ListRes
 }
+
 ListOfTraitType=GetTypeSex(params.input_listfiles,params.pheno.split(","))
 list_traits_type=Channel.from(ListOfTraitType)
 
+list_file_pheno_man=channel.from(listfile[0])
+list_file_sumstat_man=channel.fromPath(listfile[1], checkIfExists:true)
+list_file_type_man=channel.from(listfile[2])
+
 process drawManPlot {
+    label 'R'
     memory params.mem_req
     time params.big_time
     cpus params.nb_cpu
     input:
-      file(list_file) from list_file_manh
-    each  pheno_trait from list_traits_type
+      path(gwas) from list_file_sumstat_man
+      val(pheno) from list_file_pheno_man
+      val(type) from list_file_type_man
     output:
-      set this_pheno,file (output) into report_pca_man
+      tuple val(pheno),path(output) into report_pca_man
     script:
-      this_pheno = pheno_trait[0]
-      type       = pheno_trait[1]
-      output="${this_pheno}.${type}.man.pdf"
+      output="${pheno}.${type}.man.pdf"
     """
-    ManPlot.r --maf ${params.cut_maf}  --pheno ${this_pheno} --out_file $output  --head_pval ${params.head_pval} --head_freq ${params.head_freq} --list_files $list_file --head_bp  ${params.head_bp} --head_chr ${params.head_chr} --head_rs ${params.head_rs} --type $type
+    ManPlot.r --maf ${params.cut_maf}  --pheno ${pheno} --out_file $output  --head_pval ${params.head_pval} --head_freq ${params.head_freq} --file_gwas $gwas  --head_bp  ${params.head_bp} --head_chr ${params.head_chr} --head_rs ${params.head_rs} --type $type
     """
 }
 
+list_file_gwas=channel.fromPath(listfile[1]).collect()
 process getListeChro {
    memory params.mem_req
    time params.big_time
    input :
-     file(list_file) from list_file_lchro
+     path(list_file) from list_file_gwas
    output :
        stdout into listchro
    script:
+    listfilegw=list_file.join(',')
     """
-    head -2 $list_file > .tmp
-    GetListChro.py --list_file .tmp --head_chr $params.head_chr
+    GetListChro.py --list_file $listfilegw --head_chr $params.head_chr
     """
 }
 
@@ -153,18 +202,20 @@ list_file_other=file('NO_FILE')
 }
 
 gwascat_ch=Channel.fromPath(params.gwas_cat)
+list_file_gwas_compstat=channel.fromPath(listfile[1]).collect()
 process ComputeStat{
+    label 'R'
    memory params.mem_req
    time params.big_time
    cpus params.nb_cpu
    input :
+       path(allgwas) from  list_file_gwas_compstat
        file(list_file)  from list_file_analys
        file(other_file) from list_file_other
        file(gwascat) from gwascat_ch
    each pheno from pheno_label_ch_analy 
    each chro from  listchro2
    output :
-       //set pheno,file("${out}_nsig.csv"), file("${out}_rsgwasdet.csv"), file("${out}_rsresume.csv"),file("${out}_windgwasdet.csv"), file("${out}_windresume.csv"),file("${out}_othertrait.csv") into stats_multi
        set pheno, file("${out}*.csv") into stats_multi
    script :
     out="${pheno}_${chro}"
@@ -188,6 +239,7 @@ if(params.files_othertraits)othertraits="--list_files_othertraits ${params.files
 else othertraits=""
 knitropt_ch=Channel.fromPath(baseDir+"/bin/MergeAll.Rnw")
 process MergeStat{
+   label 'R'
    memory params.mem_req
    time params.big_time
    input :
